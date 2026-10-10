@@ -49,7 +49,7 @@ const mn=s=>Math.floor(s/60);
 const tosec=h=>{const m=/^(\d+):(\d+)/.exec(h||'');return m?m[1]*3600+m[2]*60:null};
 
 /* ---------- IMPORT ---------- */
-function pt(v){ // transition time -> [isoDate, secOfDay]
+function pt(v){
   if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400)*1000);return[d.toISOString().slice(0,10),d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds()]}
   const m=/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+):(\d+)\s*(AM|PM)?/i.exec(String(v));if(!m)return null;
   let y=+m[3];if(y<100)y+=2000;let h=+m[4]%12;if(/pm/i.test(m[7]||''))h+=12;if(!m[7])h=+m[4];
@@ -89,19 +89,7 @@ async function loadLogs(){
     }catch(e){LOGS=[]}}
   else LOGS=(S.log||[]).slice().reverse()}
 function logv(){return`<p class="hint">Every import, deletion, excuse, restore and shift change is recorded with date, time and user.</p><div class="card"><table style="min-width:700px"><thead><tr><th>When</th><th>User</th><th>Action</th><th>Detail</th></tr></thead><tbody>${(LOGS||[]).map(x=>`<tr><td>${new Date(x.t).toLocaleString()}</td><td>${esc(x.n||'\u2014')}</td><td class="n">${esc(x.a)}</td><td style="white-space:normal">${esc(x.d)}</td></tr>`).join('')||'<tr><td colspan=4 class="empty">No activity yet</td></tr>'}</tbody></table></div>`}
-function docv(){return`<div class="card pad"><h2>Performance Control Center \u2014 system documentation (v1.0)</h2>
-<p><b>Purpose.</b> Monitors agent attendance and conduct from the Cisco <i>Agent State Detail Report</i>, one day at a time, and produces monthly incident reports.</p>
-<h2>Calculation rules</h2><table style="min-width:0"><tbody>
-<tr><td class="n">Late arrival</td><td style="white-space:normal">First <i>Ready</i> after the first <i>Logged-in</i> minus shift start; late if more than 5 minutes. Only the minutes are reported. Agents with no login that day (shift started the previous day) are not checked.</td></tr>
-<tr><td class="n">Logout / Emergency</td><td style="white-space:normal">Each Logout is counted when the time until the next login exceeds 3 minutes; reason <i>Emergency Leave</i> is counted as Emergency. A final Emergency Leave logout counts as a case with no minutes.</td></tr>
-<tr><td class="n">Break</td><td style="white-space:normal">Sum of Not Ready rows with reason Break; violation above 43 minutes (the excess is shown).</td></tr>
-<tr><td class="n">Work</td><td style="white-space:normal">Sum of Not Ready rows with reason Work; violation above 5 minutes.</td></tr>
-<tr><td class="n">Call No Answer</td><td style="white-space:normal">Number of rows with reason Call No Answer lasting more than 6 seconds.</td></tr>
-<tr><td class="n">Logout time / Early logout</td><td style="white-space:normal">Time of the last Logout of the day. Highlighted if before first login + 8 hours (not applied when the last logout is an Emergency).</td></tr>
-<tr><td class="n">Received</td><td style="white-space:normal">Number of rows with Agent State Reserved and Duration of 1 or 2 seconds (row count, not time).</td></tr>
-<tr><td class="n">Excuse</td><td style="white-space:normal">Clicking a coloured cell cancels that violation (approved by management). It is excluded from counts and recorded in the Audit Log; click again to restore.</td></tr></tbody></table>
-<h2>Data &amp; retention</h2><p>Each imported day is saved under the date found inside the report. Importing a date that already exists asks you to replace or cancel. Data is stored in the Firestore database of this Firebase project and is kept until you delete it. Use <b>Data \u2192 Backup</b> regularly: the backup file can restore everything on any copy of the system.</p>
-<p class="tag">Stored per day: login, first ready, logouts with reasons, break/work rows, call-no-answer rows and 1\u20132 second Reserved rows for each agent \u2014 not the full report.</p></div>`}
+
 function showLogin(msg){let m=document.getElementById('lg');if(!m){m=document.createElement('div');m.id='lg';m.style.cssText='position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px';
   m.innerHTML=`<div class="card" style="padding:28px;width:min(380px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:20px">Performance Control Center</h2><p class="hint">Sign in to continue</p><div style="display:grid;gap:10px"><input id="em" type="email" placeholder="Email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button class="b p" id="si">Sign in</button><span id="le" style="color:var(--redt);font-size:12px"></span></div></div>`;
   document.body.appendChild(m);
@@ -119,7 +107,7 @@ async function boot(){
     S.days={};S.ex={};S.shifts={};LOADED={};date='';month='';LOCALCOPY=null;
     $('#st').textContent='\u25cf '+MEN;render()})}
 function ask(dup,ag,ds,apply){const m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px';
-  m.innerHTML=`<div class="card" style="padding:22px;max-width:480px;overflow:visible;margin:0"><h2 style="margin-top:0">Data for this date already exists</h2><p>${dup.map(d=>`<b>${dmy(d)}</b> — saved: ${S.idx[d].a} agents · new file: ${Object.keys(ag[d]).length} agents`).join('<br>')}</p><p>Replace the saved data with this file, or cancel?</p><div class="bar" style="margin:0"><button class="b p" id="mr">Replace</button><button class="b" id="mc">Cancel</button></div></div>`;
+  m.innerHTML=`<div class="card" style="padding:22px;max-width:480px;overflow:visible;margin:0"><h2 style="margin-top:0">Data for this date already exists</h2><p>${dup.map(d=>`<b>${dmy(d)}</b> — saved:${S.idx[d].a} agents · new file: ${Object.keys(ag[d]).length} agents`).join('<br>')}</p><p>Replace the saved data with this file, or cancel?</p><div class="bar" style="margin:0"><button class="b p" id="mr">Replace</button><button class="b" id="mc">Cancel</button></div></div>`;
   document.body.appendChild(m);$('#mr').onclick=()=>{m.remove();apply(ds)};$('#mc').onclick=()=>{m.remove();apply(ds.filter(d=>!dup.includes(d)))}}
 function importFile(f){
   const rd=new FileReader();rd.onload=e=>{
@@ -163,7 +151,7 @@ function calc(dt,name){
   return o}
 const ek=(d,n,t)=>d+'|'+n+'|'+t;
 const exd=(d,n,t)=>!!S.ex[ek(d,n,t)];
-function viol(dt,o){ // list of {type,label,val}
+function viol(dt,o){
   const v=[];
   if(o.lateV)v.push({t:'late',l:'Late arrival',v:mn(o.late)+' min'});
   if(o.lo.n)v.push({t:'logout',l:'Logout ×'+o.lo.n,v:mn(o.lo.s)+' min'});
@@ -203,7 +191,6 @@ function dash(){
   <div class="k"><b>${ct(o=>o.lo.n+o.em.n)}</b><span>Disconnections</span></div>
   <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
   <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((s,o)=>s+rcnt(o),0)}</b><span>Received (1,2 sec)</span></div></div>
-  <p class="hint">Rules: Late &gt; 5 min after shift start (from first Ready after login) · Logout/Emergency counted after 3 min · Break &gt; 43 min · Work &gt; 5 min · Call No Answer &gt; 6 sec · Logout column turns amber if before login + 8 h. <b>Click any coloured cell to excuse it.</b> Received = number of Reserved rows lasting 1 or 2 seconds (hover a number to see the times). Shift start is auto-detected (nearest hour of login); edit it for exact accuracy.</p>
   <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First ready</th><th>Late</th><th>Logout (count/min)</th><th>Emergency (count/min)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
 function monthly(){
   const ds=Object.keys(S.days).filter(d=>d.startsWith(month)).sort();
@@ -260,12 +247,12 @@ async function exportX(){if(!EXP)return;const wb=XLSX.utils.book_new();EXP.sh.fo
   try{const dl=window.claude&&await claude.use('downloads');if(!dl){copyBox();return}
   await dl.save({filename:EXP.n+'.xlsx',data:XLSX.write(wb,{bookType:'xlsx',type:'array'})})}catch(e){if(!e||e.code!=='declined')copyBox()}}
 function render(){
-  $('#nav').innerHTML=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log'],['doc','Documentation']].map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
+  $('#nav').innerHTML=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log']].map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
   const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
   const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='<div class="empty">Loading from database…</div>';loadMonth(lm).then(render);return}
   if(tab==='log'&&LOGS===null){loadLogs().then(render);return}
   const bar=tab==='dash'||tab==='rec'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button>${tab==='dash'?`<input id="q" placeholder="Search employee…" value="${window.Q||''}">`:''}<button class="b p" data-exp="1" style="margin-left:auto">⬇ Export Excel</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"><button class="b p" data-exp="1">⬇ Export Excel</button><button class="b" onclick="print()">Print</button></div>`:'';
-  $('#app').innerHTML=bar+({dash,mon:monthly,rec:recv,data,log:logv,doc:docv}[tab])();
+  $('#app').innerHTML=bar+({dash,mon:monthly,rec:recv,data,log:logv}[tab])();
   if(tab==='rec')month=date.slice(0,7)}
 document.addEventListener('click',e=>{const t=e.target;let x;
   if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;render()}
