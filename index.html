@@ -1,20 +1,294 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function uref() { return /databases/$(database)/documents/users/$(request.auth.uid); }
-    function active() { return request.auth != null && exists(uref()) && get(uref()).data.active == true; }
-    function role() { return get(uref()).data.role; }
-    function editor() { return active() && (role() == 'editor' || role() == 'admin'); }
-    function admin() { return active() && role() == 'admin'; }
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Performance Control Center</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f5f9;--card:#fff;--tx:#14213d;--mut:#6b7791;--bd:#e1e6ef;--pri:#1d4ed8;--red:#fde8e8;--redt:#b91c1c;--amb:#fff4d6;--ambt:#92400e;--grn:#e3f6ea;--grnt:#15803d;--hd:#0f1c3f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1020;--card:#141b30;--tx:#e8edf8;--mut:#8f9bb8;--bd:#25304d;--pri:#6d9bff;--red:#4a1d24;--redt:#ff9a9a;--amb:#4a3912;--ambt:#ffd27a;--grn:#12372a;--grnt:#6ee7a0;--hd:#070b17}}
+:root[data-theme="dark"]{--bg:#0b1020;--card:#141b30;--tx:#e8edf8;--mut:#8f9bb8;--bd:#25304d;--pri:#6d9bff;--red:#4a1d24;--redt:#ff9a9a;--amb:#4a3912;--ambt:#ffd27a;--grn:#12372a;--grnt:#6ee7a0;--hd:#070b17}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
+header{background:var(--hd);color:#fff;padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:18px;margin:0;letter-spacing:.3px}header small{opacity:.65;display:block;font-weight:400}
+nav{display:flex;gap:4px;flex-wrap:wrap}nav button{background:transparent;border:0;color:#cbd5ee;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+nav button.on{background:#1d4ed8;color:#fff}
+main{max-width:1500px;margin:0 auto;padding:20px 24px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+input,select,button.b{font:inherit;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)}
+button.b{cursor:pointer;font-weight:600}button.p{background:var(--pri);color:#fff;border-color:var(--pri)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.k{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px}.k b{font-size:24px;display:block}.k span{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow-x:auto;margin-bottom:16px}
+table{border-collapse:collapse;width:100%;min-width:980px}th{background:var(--bg);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);padding:10px;white-space:nowrap}
+td{padding:9px 10px;border-top:1px solid var(--bd);white-space:nowrap}td.n{font-weight:600}
+.v{background:var(--red);color:var(--redt);font-weight:700;cursor:pointer;border-radius:6px}.w{background:var(--amb);color:var(--ambt);font-weight:700;cursor:pointer}
+.ok{color:var(--grnt)}.x{background:var(--grn);color:var(--grnt);text-decoration:line-through;cursor:pointer}
+td.c{text-align:center}.hint{color:var(--mut);font-size:12px;margin:0 0 12px}.empty{padding:40px;text-align:center;color:var(--mut)}
+input.t{width:92px}h2{font-size:15px;margin:18px 0 8px}.tag{font-size:11px;color:var(--mut)}
+@media print{header,.bar,.hint{display:none}}
+header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px rgba(0,0,0,.25)}.k{border-top:3px solid var(--pri);box-shadow:0 1px 3px rgba(20,33,61,.06)}.k b{font-size:28px}th{position:sticky;top:0;z-index:1}td.n{position:sticky;left:0;background:var(--card)}tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(29,78,216,.06)}.chip{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}.chip.bad{background:var(--red);color:var(--redt)}.chip.good{background:var(--grn);color:var(--grnt)}.card.pad{padding:6px 18px 14px}.br{display:flex;align-items:center;gap:10px;margin:6px 0}.br i{display:block;height:10px;border-radius:6px;background:var(--pri)}.br span{width:170px;font-weight:600}.br em{font-style:normal;color:var(--mut)}#q{width:220px}
+</style></head><body>
+<header><h1>Performance Control Center<small>Agent attendance &amp; conduct monitoring</small></h1>
+<nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
+<main id="app"></main>
+<script>
+const LIM={grace:300,emerg:180,brk:43*60,work:300,cna:6,shift:8*3600};
+let S={days:{},idx:{},shifts:{},ex:{},recv:'1,2'},tab='dash',date='',month='';const FB_CONFIG={apiKey:"AIzaSyC5wAmajiFgKEAfi4Ay0ZA1QGL-KS4K9zo",authDomain:"performance-control-ab7f9.firebaseapp.com",projectId:"performance-control-ab7f9",storageBucket:"performance-control-ab7f9.firebasestorage.app",messagingSenderId:"599359001764",appId:"1:599359001764:web:8ae96947247d8036b60231"};
+let MEN='',DB=null,ME=null,LOADED={},LOGS=null,LOCALCOPY=null;
+try{const r=localStorage.getItem('pcc_v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{if(DB)return;try{localStorage.setItem('pcc_v1',JSON.stringify(S))}catch(e){alert('Storage is full. Remove old days in Data tab.')}};
+const $=q=>document.querySelector(q);
+const pad=n=>String(n).padStart(2,'0');
+const hms=s=>pad(Math.floor(s/3600)%24)+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60);
+const dmy=d=>d.split('-').reverse().join('/');
+const mn=s=>Math.floor(s/60);
+const tosec=h=>{const m=/^(\d+):(\d+)/.exec(h||'');return m?m[1]*3600+m[2]*60:null};
 
-    match /users/{uid} {
-      allow read: if request.auth != null && (request.auth.uid == uid || admin());
-      allow write: if admin();
-    }
-    match /days/{id} { allow read: if active(); allow write: if editor(); }
-    match /meta/{id} { allow read: if active(); allow write: if editor(); }
-    match /ex/{id}   { allow read: if active(); allow write: if editor(); }
-    match /sh/{id}   { allow read: if active(); allow write: if editor(); }
-    match /log/{id}  { allow read: if active(); allow create: if active(); }
-  }
-}
+/* ---------- IMPORT ---------- */
+function pt(v){ // transition time -> [isoDate, secOfDay]
+  if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400)*1000);return[d.toISOString().slice(0,10),d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds()]}
+  const m=/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+):(\d+)\s*(AM|PM)?/i.exec(String(v));if(!m)return null;
+  let y=+m[3];if(y<100)y+=2000;let h=+m[4]%12;if(/pm/i.test(m[7]||''))h+=12;if(!m[7])h=+m[4];
+  return[y+'-'+pad(m[1])+'-'+pad(m[2]),h*3600+m[5]*60+ +m[6]]}
+function pd(v){if(typeof v==='number')return Math.round(v*86400);const m=/(\d+):(\d+):(\d+)/.exec(String(v));return m?m[1]*3600+m[2]*60+ +m[3]:0}
+const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function saveDay(d){
+  if(!DB){save();return}
+  const ag=S.days[d],parts=[];let cur={},sz=0;
+  Object.keys(ag).forEach(n=>{const l=JSON.stringify(ag[n]).length;if(sz+l>200000&&Object.keys(cur).length){parts.push(cur);cur={};sz=0}cur[n]=ag[n];sz+=l});parts.push(cur);
+  const old=(S.idx[d]&&S.idx[d].p)||0;
+  for(let i=0;i<parts.length;i++)await DB.doc('days/'+d+'_'+i).set({date:d,month:d.slice(0,7),agents:JSON.stringify(parts[i])});
+  for(let i=parts.length;i<old;i++)try{await DB.doc('days/'+d+'_'+i).delete()}catch(e){}
+  S.idx[d].p=parts.length}
+async function saveIdx(){if(!DB){save();return}await DB.doc('meta/index').set({dates:S.idx})}
+function persistMap(c,k){if(!DB){save();return}const m=k.slice(0,7),src=c==='ex'?S.ex:S.shifts,sub={};
+  Object.keys(src).filter(x=>x.startsWith(m)).forEach(x=>sub[x]=src[x]);DB.doc(c+'/'+m).set({m:sub}).catch(()=>{})}
+async function logA(a,d){const r={t:Date.now(),a,d};if(DB){try{await DB.collection('log').add(Object.assign({u:ME,n:MEN},r))}catch(e){}}else{S.log=(S.log||[]).concat([r]).slice(-500);save()}}
+async function loadMonth(m){if(!DB||LOADED[m])return;
+  try{const q=await DB.collection('days').where('month','==',m).get();q.docs.forEach(x=>{const v=x.data();S.days[v.date]=Object.assign(S.days[v.date]||{},typeof v.agents==='string'?JSON.parse(v.agents):v.agents)});
+    for(const c of ['ex','sh']){const g=await DB.doc(c+'/'+m).get();if(g.exists)Object.assign(c==='ex'?S.ex:S.shifts,g.data().m||{})}}catch(e){alert('Could not read the database for '+m)}
+  LOADED[m]=1}
+async function delDay(d){const p=(S.idx[d]||{}).p||1;delete S.days[d];delete S.idx[d];
+  if(DB){for(let i=0;i<p;i++)try{await DB.doc('days/'+d+'_'+i).delete()}catch(e){}}
+  await saveIdx();logA('Delete day',dmy(d));render()}
+async function restoreData(b){const ds=Object.keys(b.days||{});
+  for(const d of ds){S.days[d]=b.days[d];S.idx[d]={a:Object.keys(b.days[d]).length,t:Date.now(),f:'restore',p:0};await saveDay(d)}
+  Object.assign(S.ex,b.ex||{});Object.assign(S.shifts,b.shifts||{});
+  new Set([...Object.keys(b.ex||{}),...Object.keys(b.shifts||{})].map(k=>k.slice(0,7))).forEach(m=>{persistMap('ex',m);persistMap('sh',m)});
+  await saveIdx();logA('Restore',ds.length+' day(s)');render()}
+async function dlFile(n,data){
+  if(window.top===window){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=n;document.body.appendChild(a);a.click();a.remove();return true}
+  try{const dl=window.claude&&await claude.use('downloads');if(dl){await dl.save({filename:n,data});return true}}catch(e){if(e&&e.code==='declined')return true}
+  return false}
+async function loadLogs(){
+  if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(300).get();LOGS=q.docs.map(x=>x.data());
+    }catch(e){LOGS=[]}}
+  else LOGS=(S.log||[]).slice().reverse()}
+function logv(){return`<p class="hint">Every import, deletion, excuse, restore and shift change is recorded with date, time and user.</p><div class="card"><table style="min-width:700px"><thead><tr><th>When</th><th>User</th><th>Action</th><th>Detail</th></tr></thead><tbody>${(LOGS||[]).map(x=>`<tr><td>${new Date(x.t).toLocaleString()}</td><td>${esc(x.n||'\u2014')}</td><td class="n">${esc(x.a)}</td><td style="white-space:normal">${esc(x.d)}</td></tr>`).join('')||'<tr><td colspan=4 class="empty">No activity yet</td></tr>'}</tbody></table></div>`}
+function docv(){return`<div class="card pad"><h2>Performance Control Center \u2014 system documentation (v1.0)</h2>
+<p><b>Purpose.</b> Monitors agent attendance and conduct from the Cisco <i>Agent State Detail Report</i>, one day at a time, and produces monthly incident reports.</p>
+<h2>Calculation rules</h2><table style="min-width:0"><tbody>
+<tr><td class="n">Late arrival</td><td style="white-space:normal">First <i>Ready</i> after the first <i>Logged-in</i> minus shift start; late if more than 5 minutes. Only the minutes are reported. Agents with no login that day (shift started the previous day) are not checked.</td></tr>
+<tr><td class="n">Logout / Emergency</td><td style="white-space:normal">Each Logout is counted when the time until the next login exceeds 3 minutes; reason <i>Emergency Leave</i> is counted as Emergency. A final Emergency Leave logout counts as a case with no minutes.</td></tr>
+<tr><td class="n">Break</td><td style="white-space:normal">Sum of Not Ready rows with reason Break; violation above 43 minutes (the excess is shown).</td></tr>
+<tr><td class="n">Work</td><td style="white-space:normal">Sum of Not Ready rows with reason Work; violation above 5 minutes.</td></tr>
+<tr><td class="n">Call No Answer</td><td style="white-space:normal">Number of rows with reason Call No Answer lasting more than 6 seconds.</td></tr>
+<tr><td class="n">Logout time / Early logout</td><td style="white-space:normal">Time of the last Logout of the day. Highlighted if before first login + 8 hours (not applied when the last logout is an Emergency).</td></tr>
+<tr><td class="n">Received</td><td style="white-space:normal">Number of rows with Agent State Reserved and Duration of 1 or 2 seconds (row count, not time).</td></tr>
+<tr><td class="n">Excuse</td><td style="white-space:normal">Clicking a coloured cell cancels that violation (approved by management). It is excluded from counts and recorded in the Audit Log; click again to restore.</td></tr></tbody></table>
+<h2>Data &amp; retention</h2><p>Each imported day is saved under the date found inside the report. Importing a date that already exists asks you to replace or cancel. Data is stored in the Firestore database of this Firebase project and is kept until you delete it. Use <b>Data \u2192 Backup</b> regularly: the backup file can restore everything on any copy of the system.</p>
+<p class="tag">Stored per day: login, first ready, logouts with reasons, break/work rows, call-no-answer rows and 1\u20132 second Reserved rows for each agent \u2014 not the full report.</p></div>`}
+function showLogin(msg){let m=document.getElementById('lg');if(!m){m=document.createElement('div');m.id='lg';m.style.cssText='position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px';
+  m.innerHTML=`<div class="card" style="padding:28px;width:min(380px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:20px">Performance Control Center</h2><p class="hint">Sign in to continue</p><div style="display:grid;gap:10px"><input id="em" type="email" placeholder="Email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button class="b p" id="si">Sign in</button><span id="le" style="color:var(--redt);font-size:12px"></span></div></div>`;
+  document.body.appendChild(m);
+  const go=async()=>{$('#le').textContent='';try{await firebase.auth().signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value)}catch(e){$('#le').textContent='Sign-in failed: '+(e.code||e.message)}};
+  $('#si').onclick=go;$('#pw').onkeydown=e=>{if(e.key==='Enter')go()}}
+  if(msg)$('#le').textContent=msg}
+function hideLogin(){const m=document.getElementById('lg');if(m)m.remove()}
+async function boot(){
+  if(!window.firebase){showLogin('Could not load Firebase. Check the internet connection.');return}
+  firebase.initializeApp(FB_CONFIG);const auth=firebase.auth();
+  auth.onAuthStateChanged(async u=>{
+    if(!u){DB=null;$('#app').innerHTML='';showLogin();return}
+    hideLogin();DB=firebase.firestore();ME=u.uid;MEN=u.email||'';
+    try{const g=await DB.doc('meta/index').get();S.idx=g.exists?(g.data().dates||{}):{}}catch(e){alert('Database error: '+e.message+'\nCheck that Firestore is created and the security rules allow signed-in users.');return}
+    S.days={};S.ex={};S.shifts={};LOADED={};date='';month='';LOCALCOPY=null;
+    $('#st').textContent='\u25cf '+MEN;render()})}
+function ask(dup,ag,ds,apply){const m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px';
+  m.innerHTML=`<div class="card" style="padding:22px;max-width:480px;overflow:visible;margin:0"><h2 style="margin-top:0">Data for this date already exists</h2><p>${dup.map(d=>`<b>${dmy(d)}</b> — saved: ${S.idx[d].a} agents · new file: ${Object.keys(ag[d]).length} agents`).join('<br>')}</p><p>Replace the saved data with this file, or cancel?</p><div class="bar" style="margin:0"><button class="b p" id="mr">Replace</button><button class="b" id="mc">Cancel</button></div></div>`;
+  document.body.appendChild(m);$('#mr').onclick=()=>{m.remove();apply(ds)};$('#mc').onclick=()=>{m.remove();apply(ds.filter(d=>!dup.includes(d)))}}
+function importFile(f){
+  const rd=new FileReader();rd.onload=e=>{
+    const wb=XLSX.read(e.target.result,{type:'array'});const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true});
+    const hi=rows.findIndex(r=>String(r[0]||'').trim()==='Agent Name');if(hi<0){alert('Header row "Agent Name" not found.');return}
+    const ag={},seenR={};let n=0;
+    rows.slice(hi+1).forEach(r=>{
+      if(!r[0]||!r[3])return;const t=pt(r[3]);if(!t)return;
+      const name=String(r[0]).trim(),st=String(r[4]||'').trim(),re=String(r[5]||'').trim(),d=pd(r[6]);
+      const k=t[0]+'|'+name;let ev=null;
+      if(/^logged-in/i.test(st)){ev=[t[1],'I','',0];seenR[k]=0}
+      else if(/^logout/i.test(st))ev=[t[1],'O',re,0];
+      else if(/^ready/i.test(st)){if(!seenR[k]){seenR[k]=1;ev=[t[1],'R','',0]}}
+      else if(/^not ready/i.test(st)&&/^(break|work)$|no answer/i.test(re))ev=[t[1],'N',re,d];
+      else if(/^(reserved|receiv)/i.test(st)&&d<=10)ev=[t[1],'V','',d];
+      if(!ev)return;(ag[t[0]]=ag[t[0]]||{});(ag[t[0]][name]=ag[t[0]][name]||[]).push(ev);n++});
+    const ds=Object.keys(ag);if(!ds.length){alert('No usable rows found.');return}
+    ds.sort();const dup=ds.filter(d=>S.idx[d]);
+    const apply=async keep=>{for(const d of keep){S.days[d]=ag[d];S.idx[d]={a:Object.keys(ag[d]).length,t:Date.now(),f:f.name||'',p:0};await saveDay(d);logA('Import',dmy(d)+' · '+(f.name||'file')+' · '+S.idx[d].a+' agents')}
+      if(keep.length){await saveIdx();date=keep[keep.length-1];month=date.slice(0,7);tab='dash'}render()};
+    if(dup.length)ask(dup,ag,ds,apply);else apply(ds);
+  };rd.readAsArrayBuffer(f)}
+
+/* ---------- CALC ---------- */
+function calc(dt,name){
+  const ev=(S.days[dt][name]||[]).slice().sort((a,b)=>a[0]-b[0]);
+  const li=ev.find(e=>e[1]==='I');const login=li?li[0]:(ev[0]?ev[0][0]:0);
+  const auto=Math.round(login/3600)*3600;const sh=tosec(S.shifts[dt+'|'+name]);const shift=sh==null?auto:sh;
+  const fr=li?ev.find(e=>e[1]==='R'&&e[0]>=login):null;
+  const late=fr?Math.max(0,fr[0]-shift):0;
+  const o={name,login,shift,hasLogin:!!li,outEm:false,auto:sh==null,first:fr?fr[0]:null,late,lateV:late>LIM.grace,
+    rt:[],lo:{n:0,s:0},em:{n:0,s:0},brk:0,work:0,cna:0,out:null,outEarly:0,recv:{}};
+  ev.forEach((e,i)=>{
+    if(e[1]==='O'){if(li&&e[0]<login)return;const nx=ev.slice(i+1).find(x=>x[1]==='I');
+      if(!nx){o.out=e[0];if(/emergency/i.test(e[2])){o.em.n++;o.outEm=true}return}
+      const g=nx[0]-e[0];if(g>LIM.emerg){const b=/emergency/i.test(e[2])?o.em:o.lo;b.n++;b.s+=g}}
+    else if(e[1]==='N'){if(/^break/i.test(e[2]))o.brk+=e[3];else if(/^work$/i.test(e[2]))o.work+=e[3];else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++}
+    else if(e[1]==='V'){o.recv[e[3]]=(o.recv[e[3]]||0)+1;if(e[3]<3)o.rt.push(hms(e[0])+' ('+e[3]+'s)')}});
+  if(li&&!o.outEm&&o.out!=null&&o.out<login+LIM.shift)o.outEarly=login+LIM.shift-o.out;
+  o.brkV=o.brk>LIM.brk;o.workV=o.work>LIM.work;
+  return o}
+const ek=(d,n,t)=>d+'|'+n+'|'+t;
+const exd=(d,n,t)=>!!S.ex[ek(d,n,t)];
+function viol(dt,o){ // list of {type,label,val}
+  const v=[];
+  if(o.lateV)v.push({t:'late',l:'Late arrival',v:mn(o.late)+' min'});
+  if(o.lo.n)v.push({t:'logout',l:'Logout ×'+o.lo.n,v:mn(o.lo.s)+' min'});
+  if(o.em.n)v.push({t:'emerg',l:'Emergency ×'+o.em.n,v:mn(o.em.s)+' min'});
+  if(o.brkV)v.push({t:'brk',l:'Break overrun',v:mn(o.brk-LIM.brk)+' min over'});
+  if(o.workV)v.push({t:'work',l:'Work overrun',v:mn(o.work-LIM.work)+' min over'});
+  if(o.cna)v.push({t:'cna',l:'Call No Answer',v:o.cna+' call(s)'});
+  if(o.outEarly)v.push({t:'early',l:'Early logout',v:mn(o.outEarly)+' min short'});
+  return v}
+const TY=[['late','Late'],['logout','Logout'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['early','Early Logout']];
+
+/* ---------- VIEWS ---------- */
+function cell(dt,o,t,bad,txt,cls){
+  if(!bad)return`<td class="c ok">${txt}</td>`;
+  const x=exd(dt,o.name,t);
+  return`<td class="c ${x?'x':cls||'v'}" data-ex="${dt}|${o.name}|${t}" title="${x?'Excused – click to restore':'Click to cancel (excuse) this violation'}">${txt}</td>`}
+function dash(){
+  const q=(window.Q||'').toLowerCase();const names=Object.keys(S.days[date]||{}).sort().filter(n=>n.toLowerCase().includes(q));
+  if(!names.length)return`<div class="card"><div class="empty">No data for ${dmy(date||'—')}. Import a report in the <b>Data</b> tab.</div></div>`;
+  const rs=names.map(n=>calc(date,n));let tv=0,ex=0;
+  rs.forEach(o=>viol(date,o).forEach(v=>exd(date,o.name,v.t)?ex++:tv++));
+  const ct=f=>rs.filter(o=>f(o)).length;
+  const body=rs.map(o=>{const m=v=>v?mn(v):0;
+    return`<tr><td class="n">${o.name}</td>
+    <td>${o.hasLogin?`<input class="t" type="time" data-sh="${o.name}" value="${hms(o.shift).slice(0,5)}" title="${o.auto?'Auto-detected shift start – edit if wrong':'Manual'}">`:'<span class="tag">Started prev. day</span>'}</td>
+    <td>${o.hasLogin?hms(o.login):'Prev. day'}</td><td>${o.first!=null?hms(o.first):'—'}</td>
+    ${cell(date,o,'late',o.lateV,m(o.late)+' min')}
+    ${cell(date,o,'logout',o.lo.n,o.lo.n?o.lo.n+' / '+mn(o.lo.s)+' min':'0')}
+    ${cell(date,o,'emerg',o.em.n,o.em.n?o.em.n+' / '+mn(o.em.s)+' min':'0')}
+    ${cell(date,o,'brk',o.brkV,mn(o.brk)+' min')}
+    ${cell(date,o,'work',o.workV,mn(o.work)+' min')}
+    ${cell(date,o,'cna',o.cna,o.cna)}
+    ${cell(date,o,'early',o.outEarly,o.out!=null?hms(o.out):'—','w')}<td class="c n" title="${o.rt.join(', ')}">${rcnt(o)}</td><td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
+  EXP={n:'Daily_'+date,sh:[['Daily',[['Agent','Shift start','Login','First ready','Late (min)','Logouts','Logout min','Emergency','Emergency min','Break (min)','Work (min)','Call no answer','Logout time','Received','Excused'],...rs.map(o=>[o.name,o.hasLogin?hms(o.shift):'',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'',o.lateV?mn(o.late):0,o.lo.n,mn(o.lo.s),o.em.n,mn(o.em.s),mn(o.brk),mn(o.work),o.cna,o.out!=null?hms(o.out):'',rcnt(o),viol(date,o).filter(v=>exd(date,o.name,v.t)).map(v=>v.l).join('; ')])]]]};
+  return`<div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
+  <div class="k"><b>${ct(o=>o.lateV)}</b><span>Late arrivals</span></div>
+  <div class="k"><b>${ct(o=>o.lo.n+o.em.n)}</b><span>Disconnections</span></div>
+  <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
+  <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((s,o)=>s+rcnt(o),0)}</b><span>Received (1,2 sec)</span></div></div>
+  <p class="hint">Rules: Late &gt; 5 min after shift start (from first Ready after login) · Logout/Emergency counted after 3 min · Break &gt; 43 min · Work &gt; 5 min · Call No Answer &gt; 6 sec · Logout column turns amber if before login + 8 h. <b>Click any coloured cell to excuse it.</b> Received = number of Reserved rows lasting 1 or 2 seconds (hover a number to see the times). Shift start is auto-detected (nearest hour of login); edit it for exact accuracy.</p>
+  <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First ready</th><th>Late</th><th>Logout (count/min)</th><th>Emergency (count/min)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
+function monthly(){
+  const ds=Object.keys(S.days).filter(d=>d.startsWith(month)).sort();
+  if(!ds.length)return`<div class="card"><div class="empty">No data saved for this month.</div></div>`;
+  const A={},det=[];
+  ds.forEach(d=>Object.keys(S.days[d]).forEach(n=>{const o=calc(d,n);A[n]=A[n]||{};
+    viol(d,o).forEach(v=>{const x=exd(d,n,v.t);det.push({d,n,v,x});if(!x)A[n][v.t]=(A[n][v.t]||0)+(v.t==='cna'?o.cna:1)})}));
+  const names=Object.keys(A).sort();
+  const rows=names.map(n=>{const t=TY.reduce((s,y)=>s+(A[n][y[0]]?1:0)*0+(A[n][y[0]]||0),0);
+    return`<tr><td class="n">${n}</td>${TY.map(y=>`<td class="c ${A[n][y[0]]?'v':'ok'}">${A[n][y[0]]||0}</td>`).join('')}<td class="c n">${t}</td></tr>`}).join('');
+  det.sort((a,b)=>a.n.localeCompare(b.n)||a.d.localeCompare(b.d));
+  const dl=det.map(r=>`<tr><td class="n">${r.n}</td><td>${dmy(r.d)}</td><td>${r.v.l}</td><td>${r.v.v}</td>
+    <td class="c ${r.x?'x':'v'}" data-ex="${r.d}|${r.n}|${r.v.t}">${r.x?'Excused – restore':'Cancel violation'}</td></tr>`).join('');
+  const T=names.map(n=>[n,TY.reduce((s,y)=>s+(A[n][y[0]]||0),0)]).sort((a,b)=>b[1]-a[1]);const mx=Math.max(1,...T.map(x=>x[1]));
+  EXP={n:'Monthly_'+month,sh:[['Summary',[['Employee',...TY.map(y=>y[1]),'Total'],...names.map(n=>[n,...TY.map(y=>A[n][y[0]]||0),T.find(x=>x[0]===n)[1]])]],['Incidents',[['Employee','Date','Type','Detail','Status'],...det.map(r=>[r.n,dmy(r.d),r.v.l,r.v.v,r.x?'Excused':'Open'])]]]};
+  return`<p class="hint">Counts of incidents per employee for the month (excused items excluded). ${ds.length} day(s) of data.</p>
+  ${T.some(x=>x[1])?`<div class="card pad"><h2>Most incidents this month</h2>${T.filter(x=>x[1]).slice(0,8).map(x=>`<div class="br"><span>${x[0]}</span><i style="width:${x[1]/mx*60}%"></i><em>${x[1]}</em></div>`).join('')}</div>`:''}<div class="card"><table><thead><tr><th>Employee</th>${TY.map(y=>`<th class="c">${y[1]}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>${rows||'<tr><td colspan=9 class="empty">No violations 🎉</td></tr>'}</tbody></table></div>
+  <h2>Incident log</h2><div class="card"><table style="min-width:640px"><thead><tr><th>Employee</th><th>Date</th><th>Type</th><th>Detail</th><th class="c">Action</th></tr></thead><tbody>${dl}</tbody></table></div>`}
+function recv(){
+  const set=S.recv.split(',').map(x=>+x.trim()).filter(x=>x>0);
+  const cnt=(d,n)=>{const o=calc(d,n);return set.reduce((s,x)=>s+(o.recv[x]||0),0)};
+  const names=[...new Set(Object.keys(S.days).flatMap(d=>Object.keys(S.days[d])))].sort();
+  const md=Object.keys(S.days).filter(d=>d.startsWith(month));
+  const rows=names.map(n=>{const a=S.days[date]&&S.days[date][n]?cnt(date,n):0;const m=md.reduce((s,d)=>S.days[d][n]?s+cnt(d,n):s,0);
+    return`<tr><td class="n">${n}</td><td class="c">${a}</td><td class="c n">${m}</td></tr>`}).join('');
+  const R=names.map(n=>[n,S.days[date]&&S.days[date][n]?cnt(date,n):0,md.reduce((s,d)=>S.days[d][n]?s+cnt(d,n):s,0)]);
+  const det=names.map(n=>{const e=((S.days[date]||{})[n]||[]).filter(e=>e[1]==='V'&&set.includes(e[3])).sort((a,b)=>a[0]-b[0]);return e.length?`<tr><td class="n">${n}</td><td class="c n">${e.length}</td><td style="white-space:normal">${e.map(x=>hms(x[0])+' ('+x[3]+'s)').join(' · ')}</td></tr>`:''}).join('');
+  EXP={n:'Received_'+date,sh:[['Received',[['Employee',dmy(date),'Month total'],...R,['TOTAL',R.reduce((s,x)=>s+x[1],0),R.reduce((s,x)=>s+x[2],0)]]]]};
+  return`<div class="bar"><label>Duration (seconds, comma separated): <input id="rs" value="${S.recv}" style="width:90px"></label><button class="b p" id="rsb">Apply</button><button class="b" id="rsr">Reset to 1,2</button><span class="chip good">Active filter: ${set.join(', ')} sec</span></div>
+  <p class="hint">Counts rows where Agent State = Received (appears as “Reserved” in the report) and Duration equals one of the seconds listed (count of rows, not total time).</p>
+  <div class="card"><table style="min-width:500px"><thead><tr><th>Employee</th><th class="c">${dmy(date||'')}</th><th class="c">Month total (${month})</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <h2>Matching rows on ${dmy(date)} — compare with your Excel filter</h2><div class="card"><table style="min-width:500px"><thead><tr><th>Employee</th><th class="c">Count</th><th>Transition times (duration)</th></tr></thead><tbody>${det||'<tr><td colspan=3 class="empty">No matching rows</td></tr>'}</tbody></table></div>`}
+function data(){
+  const ds=Object.keys(S.idx).sort().reverse();const fm=t=>t?new Date(t).toLocaleString():'\u2014';
+  const rows=ds.map(d=>`<tr><td class="n">${dmy(d)}</td><td>${S.idx[d].a}</td><td>${esc(S.idx[d].f||'\u2014')}</td><td>${fm(S.idx[d].t)}</td><td><button class="b" data-del="${d}">Delete</button></td></tr>`).join('')||'<tr><td colspan=5 class="empty">No data yet</td></tr>';
+  return`<div class="card pad"><h2>Storage</h2><p>${DB?'<span class="chip good">\u25cf Database connected</span> Data is stored in your Firebase (Firestore) database and is available from any device after sign-in.':'<span class="chip bad">\u25cf Local storage only</span> Data lives in this browser only and can be lost. Check your internet connection and sign in again.'}</p>${DB&&LOCALCOPY&&Object.keys(LOCALCOPY.days).length?`<button class="b p" id="mig">Upload ${Object.keys(LOCALCOPY.days).length} day(s) found in this browser to the database</button>`:''}</div>
+  <div class="bar"><input type="file" id="f" accept=".xlsx,.xls"><span class="tag">Import the Agent State Detail Report (xlsx). The date is read from the report itself; if it already exists you will be asked to replace or cancel.</span></div>
+  <div class="card"><table style="min-width:640px"><thead><tr><th>Date</th><th>Agents</th><th>Source file</th><th>Imported</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  <h2>Backup &amp; restore</h2><div class="bar"><button class="b p" id="bk">\u2b07 Backup all data (JSON)</button><label class="tag">Restore from backup: <input type="file" id="rf" accept=".json"></label></div>
+  <p class="hint">Keep a backup file in a safe place (for example once a month). It contains every day, excuse and shift setting.</p>`}
+
+let EXP=null;
+const rcnt=o=>(o.recv[1]||0)+(o.recv[2]||0);
+const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
+function copyBox(){const m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px';
+  const tsv=i=>EXP.sh[i][1].map(r=>r.map(c=>String(c==null?'':c).replace(/[\t\r\n]+/g,' ')).join('\t')).join('\n');
+  m.innerHTML=`<div class="card" style="padding:20px;width:min(720px,100%);overflow:visible;margin:0"><h2 style="margin-top:0">Copy to Excel</h2><p class="hint">Direct file download is not available in this browser view. Copy the table and paste it into Excel (cell A1, Ctrl+V).</p><div class="bar">${EXP.sh.length>1?`<select id="cs">${EXP.sh.map((s,i)=>`<option value="${i}">${s[0]}</option>`).join('')}</select>`:''}<button class="b p" id="cc">Copy</button><button class="b" id="cx">Close</button><span class="tag" id="cm"></span></div><textarea id="ct" readonly style="width:100%;height:240px;font:12px monospace;white-space:pre"></textarea></div>`;
+  document.body.appendChild(m);const ta=m.querySelector('#ct');ta.value=tsv(0);
+  if(m.querySelector('#cs'))m.querySelector('#cs').onchange=e=>{ta.value=tsv(+e.target.value)};
+  m.querySelector('#cx').onclick=()=>m.remove();
+  m.querySelector('#cc').onclick=async()=>{ta.select();let ok=false;try{await navigator.clipboard.writeText(ta.value);ok=true}catch(e){try{ok=document.execCommand('copy')}catch(e2){}}m.querySelector('#cm').textContent=ok?'Copied ✓':'Press Ctrl+C to copy the selected text'}}
+async function exportX(){if(!EXP)return;const wb=XLSX.utils.book_new();EXP.sh.forEach(s=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s[1]),s[0]));
+  if(window.top===window){try{XLSX.writeFile(wb,EXP.n+'.xlsx');return}catch(e){}}
+  try{const dl=window.claude&&await claude.use('downloads');if(!dl){copyBox();return}
+  await dl.save({filename:EXP.n+'.xlsx',data:XLSX.write(wb,{bookType:'xlsx',type:'array'})})}catch(e){if(!e||e.code!=='declined')copyBox()}}
+function render(){
+  $('#nav').innerHTML=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log'],['doc','Documentation']].map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
+  const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
+  const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='<div class="empty">Loading from database…</div>';loadMonth(lm).then(render);return}
+  if(tab==='log'&&LOGS===null){loadLogs().then(render);return}
+  const bar=tab==='dash'||tab==='rec'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button>${tab==='dash'?`<input id="q" placeholder="Search employee…" value="${window.Q||''}">`:''}<button class="b p" data-exp="1" style="margin-left:auto">⬇ Export Excel</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"><button class="b p" data-exp="1">⬇ Export Excel</button><button class="b" onclick="print()">Print</button></div>`:'';
+  $('#app').innerHTML=bar+({dash,mon:monthly,rec:recv,data,log:logv,doc:docv}[tab])();
+  if(tab==='rec')month=date.slice(0,7)}
+document.addEventListener('click',e=>{const t=e.target;let x;
+  if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;render()}
+  else if(x=t.closest('[data-ex]')){const k=x.dataset.ex,on=!S.ex[k];if(on)S.ex[k]=1;else delete S.ex[k];persistMap('ex',k);logA(on?'Excuse':'Restore violation',k.split('|').reverse().join(' · ').replace(/(\d{4})-(\d\d)-(\d\d)/,'$3/$2/$1'));render()}
+  else if(x=t.closest('[data-step]')){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+ +x.dataset.step);date=d.toISOString().slice(0,10);render()}
+  else if(x=t.closest('[data-del]')){if(confirm('Delete '+dmy(x.dataset.del)+'?'))delDay(x.dataset.del)}
+  else if(t.id==='rsb'){S.recv=$('#rs').value||'1,2';save();render()}});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.id==='dt'&&t.value){date=t.value;month=date.slice(0,7);render()}
+  else if(t.id==='mo'&&t.value){month=t.value;render()}
+  else if(t.id==='f'&&t.files[0])importFile(t.files[0]);
+  else if(t.dataset.sh){const k=date+'|'+t.dataset.sh;S.shifts[k]=t.value;persistMap('sh',k);logA('Shift start',dmy(date)+' · '+t.dataset.sh+' = '+t.value);render()}});
+render();
+document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))exportX();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){window.Q=e.target.value;const p=e.target.selectionStart;render();const q=$('#q');q.focus();q.setSelectionRange(p,p)}});
+document.addEventListener('click',e=>{if(e.target.id==='rsr'){S.recv='1,2';save();render()}});
+document.addEventListener('click',async e=>{const id=e.target.id;
+  if(id==='mig'){await restoreData(LOCALCOPY);LOCALCOPY=null;render()}
+  if(id==='bk'){e.target.textContent='Preparing\u2026';for(const m of new Set(Object.keys(S.idx).map(d=>d.slice(0,7))))await loadMonth(m);
+    const ok=await dlFile('PCC_backup_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({v:1,at:Date.now(),days:S.days,idx:S.idx,ex:S.ex,shifts:S.shifts}));
+    if(!ok)alert('Download is not available in this view. Open the system in a normal browser tab.');render()}});
+document.addEventListener('change',e=>{if(e.target.id==='rf'&&e.target.files[0]){const r=new FileReader();r.onload=async()=>{let b;try{b=JSON.parse(r.result);if(!b.days)throw 0}catch(x){alert('Invalid backup file.');return}
+  if(confirm('Restore '+Object.keys(b.days).length+' day(s) from this backup? Existing dates will be replaced.'))await restoreData(b)};r.readAsText(e.target.files[0])}});
+document.addEventListener('click',e=>{if(e.target.id==='so')firebase.auth().signOut()});
+boot();
+</script></body></html>
