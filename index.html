@@ -148,7 +148,7 @@ function saveNote(excused){const m=document.getElementById('mdl');if(!m)return;c
   m.remove();render()}
 const rcnt=o=>(o.recv[1]||0)+(o.recv[2]||0);
 const MS='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px';
-const adj=m=>{const y=+m.slice(0,4),k=+m.slice(5),f=(a,b)=>a+'-'+pad(b);return[m,k===1?f(y-1,12):f(y,k-1),k===12?f(y+1,1]:f(y,k+1)]};
+const adj=m=>{const y=+m.slice(0,4),k=+m.slice(5),f=(a,b)=>a+'-'+pad(b);return[m,k===1?f(y-1,12):f(y,k-1),k===12?f(y+1,1):f(y,k+1)]};
 function pickFile(){const i=document.createElement('input');i.type='file';i.accept='.xlsx,.xls';i.onchange=()=>{if(i.files[0])importFile(i.files[0])};i.click()}
 function ask(dup,ag,apply,ds){const m=document.createElement('div');m.id='mdl';m.style.cssText=MS;
   m.innerHTML=`<div class="card" style="padding:22px;max-width:480px;overflow:visible;margin:0"><h2 style="margin-top:0">Data for this date already exists</h2><p>${dup.map(d=>`<b>${dmy(d)}</b> \u2014 saved: ${S.idx[d].a} agents \u00b7 new file: ${Object.keys(ag[d]).length} agents`).join('<br>')}</p><p>Replace the saved data with this file, or cancel?</p><div class="bar" style="margin:0"><button class="b p" id="mr">Replace</button><button class="b" id="mc">Cancel</button></div></div>`;
