@@ -13,25 +13,28 @@
 :root[data-theme="dark"]{--bg:#0b1020;--card:#141b30;--tx:#e8edf8;--mut:#8f9bb8;--bd:#25304d;--pri:#6d9bff;--red:#4a1d24;--redt:#ff9a9a;--amb:#4a3912;--ambt:#ffd27a;--grn:#12372a;--grnt:#6ee7a0;--hd:#070b17}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
-header{background:var(--hd);color:#fff;padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-header h1{font-size:18px;margin:0;letter-spacing:.3px}header small{opacity:.65;display:block;font-weight:400}
-nav{display:flex;gap:4px;flex-wrap:wrap}nav button{background:transparent;border:0;color:#cbd5ee;padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+header{background:var(--hd);color:#fff;padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:17px;margin:0;letter-spacing:.3px}header small{opacity:.65;display:block;font-weight:400}
+nav{display:flex;gap:4px;flex-wrap:wrap}nav button{background:transparent;border:0;color:#cbd5ee;padding:6px 12px;border-radius:6px;cursor:pointer;font:inherit;font-weight:600}
 nav button.on{background:#1d4ed8;color:#fff}
-main{max-width:1500px;margin:0 auto;padding:20px 24px}
-.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
-input,select,button.b{font:inherit;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)}
+main{max-width:1400px;margin:0 auto;padding:16px 20px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+input,select,button.b{font:inherit;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx)}
 button.b{cursor:pointer;font-weight:600}button.p{background:var(--pri);color:#fff;border-color:var(--pri)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
-.k{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.k b{font-size:14px;display:block;margin-bottom:4px}.k span{color:var(--mut);font-size:12px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow-x:auto;margin-bottom:16px}
-table{border-collapse:collapse;width:100%;min-width:980px}th{background:var(--bg);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);padding:10px;white-space:nowrap}
-td{padding:9px 10px;border-top:1px solid var(--bd);white-space:nowrap}td.n{font-weight:600}
-.v{background:var(--red);color:var(--redt);font-weight:700;cursor:pointer;border-radius:6px}.w{background:var(--amb);color:var(--ambt);font-weight:700;cursor:pointer}
-.ok{color:var(--grnt)}.x{background:var(--grn);color:var(--grnt);text-decoration:line-through;cursor:pointer}
-td.c{text-align:center}.hint{color:var(--mut);font-size:12px;margin:0 0 12px}.empty{padding:40px;text-align:center;color:var(--mut)}
-input.t{width:92px}h2{font-size:15px;margin:18px 0 8px}.tag{font-size:11px;color:var(--mut)}
+.top-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px}
+.top-box{border-radius:10px;padding:10px 14px;border:1px solid var(--bd)}
+.top-box.best{background:var(--grn);border-color:#bbf7d0;color:var(--grnt)}
+.top-box.worst{background:var(--red);border-color:#fecaca;color:var(--redt)}
+.top-box h3{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.4px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow-x:auto;margin-bottom:14px}
+table{border-collapse:collapse;width:100%}th{background:var(--bg);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);padding:8px 10px;white-space:nowrap}
+td{padding:7px 10px;border-top:1px solid var(--bd);white-space:nowrap;font-size:13px}td.n{font-weight:600}
+.v-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;background:var(--red);color:var(--redt)}
+.ok-badge{color:var(--grnt);font-weight:600}
+td.c{text-align:center}.hint{color:var(--mut);font-size:12px;margin:0 0 10px}.empty{padding:30px;text-align:center;color:var(--mut)}
+input.t{width:85px}h2{font-size:14px;margin:14px 0 6px}.tag{font-size:11px;color:var(--mut)}
 @media print{header,.bar,.hint{display:none}}
-header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px rgba(0,0,0,.25)}.k{border-top:3px solid var(--pri)}.k.good{border-top-color:var(--grnt)}.k.bad{border-top-color:var(--redt)}th{position:sticky;top:0;z-index:1}td.n{position:sticky;left:0;background:var(--card)}tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(29,78,216,.06)}.chip{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}.chip.bad{background:var(--red);color:var(--redt)}.chip.good{background:var(--grn);color:var(--grnt)}.card.pad{padding:12px 18px 16px}
+header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 10px rgba(0,0,0,.2)}th{position:sticky;top:0;z-index:1}td.n{position:sticky;left:0;background:var(--card)}tbody tr:hover td:not(.v-badge){background:rgba(29,78,216,.04)}.card.pad{padding:10px 14px}
 </style></head><body>
 <header><h1>Performance Contact Center<small>Agent attendance &amp; conduct monitoring</small></h1>
 <nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
@@ -60,7 +63,7 @@ function pt(v){
   if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400)*1000);return[d.toISOString().slice(0,10),d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds()]}
   const m=/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+):(\d+)\s*(AM|PM)?/i.exec(String(v));if(!m)return null;
   let y=+m[3];if(y<100)y+=2000;let h=+m[4]%12;if(/pm/i.test(m[7]||''))h+=12;if(!m[7])h=+m[4];
-  return[y+'-'+pad(m[1])+'-'+pad(m[2]),h*3600+m[5]*60+ +m[6]]}
+  return[y+'-'+pad(m[1])+'-'+pad(m[2]),h*3600+m[5]*60+ +m[6]}
 function pd(v){if(typeof v==='number')return Math.round(v*86400);const m=/(\d+):(\d+):(\d+)/.exec(String(v));return m?m[1]*3600+m[2]*60+ +m[3]:0}
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -127,7 +130,7 @@ function importFile(f){
   };rd.readAsArrayBuffer(f)}
 
 let WANT=null;
-const exOn=v=>v===1||!!(v&&v.e===1);
+const exOn=v=>v===1||!!(v&&v.e==1);
 const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer'};
 function openNote(k){
   const [d,n,t]=k.split('|'),cur=S.ex[k],on=exOn(cur),note=(cur&&cur.n)||'';
@@ -255,47 +258,55 @@ function monthly(){
     total:(A[n]?A[n].total:0),
     types:A[n]?A[n].types:{},
     raw:A[n]?A[n].rawTypes:{}
-  })).sort((a,b)=>a.total-b.total);
+  }));
 
-  const top3Best=sortedAgents.slice(0,3);
-  const top3Worst=sortedAgents.slice().sort((a,b)=>b.total-a.total).slice(0,3);
+  const top3Best=[...sortedAgents].sort((a,b)=>a.total-b.total||a.name.localeCompare(b.name)).slice(0,3);
+  const top3Worst=[...sortedAgents].sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name)).slice(0,3);
+  const alphaAgents=[...sortedAgents].sort((a,b)=>a.name.localeCompare(b.name));
 
-  const bestHtml=top3Best.length?top3Best.map(a=>`⭐ <b>${esc(a.name)}</b> <span class="tag">(${a.total} violations)</span>`).join('<br>'):'<span class="tag">No agents</span>';
-  const worstHtml=top3Worst.length?top3Worst.map(a=>`⚠️ <b>${esc(a.name)}</b> <span class="tag" style="color:var(--redt)">(${a.total} violations)</span>`).join('<br>'):'<span class="tag">No agents</span>';
+  const bestHtml=top3Best.length?top3Best.map(a=>`⭐ <b>${esc(a.name)}</b> <span style="opacity:0.8">(${a.total})</span>`).join('<br>'):'<span class="tag">No agents</span>';
+  const worstHtml=top3Worst.length?top3Worst.map(a=>`⚠️ <b>${esc(a.name)}</b> <span style="opacity:0.8">(${a.total})</span>`).join('<br>'):'<span class="tag">No agents</span>';
 
-  const rows=sortedAgents.map(a=>{
+  const rows=alphaAgents.map(a=>{
+    const renderCell=(val)=>val>0?`<span class="v-badge">${val}</span>`:`<span class="ok-badge">0</span>`;
     return `<tr>
       <td class="n">${esc(a.name)}</td>
-      <td class="c">${a.raw.late||0}</td>
-      <td class="c">${a.raw.brk||0}</td>
-      <td class="c">${a.raw.cna||0}</td>
-      <td class="c">${a.raw.work||0}</td>
-      <td class="c">${a.raw.emerg||0}</td>
-      <td class="c n ${a.total>0?'v':'ok'}">${a.total}</td>
+      <td class="c">${renderCell(a.raw.late||0)}</td>
+      <td class="c">${renderCell(a.raw.brk||0)}</td>
+      <td class="c">${renderCell(a.raw.cna||0)}</td>
+      <td class="c">${renderCell(a.raw.work||0)}</td>
+      <td class="c">${renderCell(a.raw.emerg||0)}</td>
+      <td class="c n">${a.total>0?`<span class="v-badge">${a.total}</span>`:`<span class="ok-badge">0</span>`}</td>
     </tr>`;
   }).join('');
 
-  const selectedAgent=window.MONTH_SELECTED_AGENT||(sortedAgents[0]?sortedAgents[0].name:'');
+  const selectedAgent=window.MONTH_SELECTED_AGENT||(alphaAgents[0]?alphaAgents[0].name:'');
   const agentLogs=(dList[selectedAgent]||[]);
-  const detailRows=agentLogs.map(l=>`<tr><td>${l.date}</td><td>${l.type}</td><td>${l.detail}</td></tr>`).join('')||'<tr><td colspan=3 class="empty">No unexcused violations for this agent</td></tr>';
+  const detailRows=agentLogs.map(l=>`<tr><td style="padding:5px 8px">${l.date}</td><td style="padding:5px 8px">${l.type}</td><td style="padding:5px 8px">${l.detail}</td></tr>`).join('')||'<tr><td colspan=3 class="empty" style="padding:15px">No unexcused violations for this agent</td></tr>';
 
-  const dropdownOpts=sortedAgents.map(a=>`<option value="${esc(a.name)}" ${a.name===selectedAgent?'selected':''}>${esc(a.name)}</option>`).join('');
+  const dropdownOpts=alphaAgents.map(a=>`<option value="${esc(a.name)}" ${a.name===selectedAgent?'selected':''}>${esc(a.name)}</option>`).join('');
 
   return`
   <div class="bar"><input type="month" id="mo" value="${month}"></div>
-  <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
-    <div class="k good"><b style="color:var(--grnt)">⭐ Top 3 Best (Least Violations)</b><span style="font-size:12px;line-height:1.6">${bestHtml}</span></div>
-    <div class="k bad"><b style="color:var(--redt)">⚠️ Top 3 Worst (Most Violations)</b><span style="font-size:12px;line-height:1.6">${worstHtml}</span></div>
+  <div class="top-grid">
+    <div class="top-box best">
+      <h3>⭐ Top 3 Best (Least Violations)</h3>
+      <div style="font-size:12px;line-height:1.5">${bestHtml}</div>
+    </div>
+    <div class="top-box worst">
+      <h3>⚠️ Top 3 Worst (Most Violations)</h3>
+      <div style="font-size:12px;line-height:1.5">${worstHtml}</div>
+    </div>
   </div>
   
   <h2>Monthly Summary (Unexcused Violations Only)</h2>
-  <div class="card"><table><thead><tr><th>Employee</th><th class="c">Late Count</th><th class="c">Break Overrun Count</th><th class="c">CNA Count</th><th class="c">Work Overrun Count</th><th class="c">Emergency Count</th><th class="c">Total Real Violations</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="card"><table><thead><tr><th>Employee</th><th class="c">Late</th><th class="c">Break Overrun</th><th class="c">CNA</th><th class="c">Work Overrun</th><th class="c">Emergency</th><th class="c">Total Real Violations</th></tr></thead><tbody>${rows}</tbody></table></div>
   
   <h2>🔍 Agent Daily Incident Lookup</h2>
-  <div class="card pad" style="max-width:800px">
-    <p class="hint">Select an agent to inspect the precise dates and times of their unexcused violations:</p>
-    <div class="bar" style="margin-bottom:12px"><label style="font-weight:650">Select Agent: <select id="agent-select" style="margin-left:8px">${dropdownOpts}</select></label></div>
-    <table><thead><tr><th>Date</th><th>Violation Type</th><th>Detail</th></tr></thead><tbody>${detailRows}</tbody></table>
+  <div class="card pad" style="max-width:700px">
+    <p class="hint" style="margin-bottom:8px">Select an agent to inspect the precise dates and times of their unexcused violations:</p>
+    <div class="bar" style="margin-bottom:8px"><label style="font-weight:600;font-size:13px">Select Agent: <select id="agent-select" style="margin-left:6px;padding:4px 8px">${dropdownOpts}</select></label></div>
+    <table style="font-size:12px"><thead><tr><th style="padding:6px 8px">Date</th><th style="padding:6px 8px">Violation Type</th><th style="padding:6px 8px">Detail</th></tr></thead><tbody>${detailRows}</tbody></table>
   </div>`;
 }
 
@@ -451,57 +462,4 @@ function render(){
   let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log']];
   if(USER_ROLE==='admin')navItems.push(['admin','Admin Panel']);
   $('#nav').innerHTML=navItems.map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
-  const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
-  const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';Promise.all(adj(lm).map(loadMonth)).then(render);return}
-  if(tab==='log'&&LOGS===null){(async()=>{if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(200).get();LOGS=q.docs.map(x=>x.data())}catch(e){LOGS=[]}}else LOGS=[];render()})();return}
-  const bar=tab==='dash'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button><input id="q" placeholder="Search..." value="${window.Q||''}"><button class="b p" data-exp="1" style="margin-left:auto">⬇ Download report</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"></div>`:'';
-  $('#app').innerHTML=bar+({dash,mon:monthly,data,log:logv,admin:adminPanel}[tab])();
-}
-
-document.addEventListener('click',e=>{const t=e.target;let x;
-  if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;render()}
-  else if(x=t.closest('[data-ex]')){openNote(x.dataset.ex)}
-  else if(x=t.closest('[data-step]')){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+ +x.dataset.step);date=d.toISOString().slice(0,10);render()}
-  else if(x=t.closest('[data-del]')){if(confirm('Delete?'))delDay(x.dataset.del)}
-  else if(t.id==='nu-btn'){
-    (async()=>{
-      const em=$('#nu-em').value.trim(), pw=$('#nu-pw').value, role=$('#nu-role').value;
-      if(!em||!pw){alert('Enter email and password');return}
-      try{
-        const secApp=firebase.initializeApp(FB_CONFIG,"SecAppCreate");
-        const cred=await secApp.auth().createUserWithEmailAndPassword(em,pw);
-        await DB.doc('users/'+cred.user.uid).set({email:em,active:true,role:role,created:Date.now(),by:MEN});
-        await secApp.delete();logA('Create user',em+' · '+role);
-        $('#nu-msg').textContent='User created successfully!';
-        $('#nu-em').value=''; $('#nu-pw').value='';
-      }catch(err){alert('Error: '+err.message)}
-    })();
-  }
-});
-document.addEventListener('change',e=>{const t=e.target;
-  if(t.id==='dt'&&t.value){date=t.value;month=date.slice(0,7);render()}
-  else if(t.id==='mo'&&t.value){month=t.value;render()}
-  else if(t.id==='f'&&t.files[0])importFile(t.files[0]);
-  else if(t.dataset.sh){const k=date+'|'+t.dataset.sh;S.shifts[k]=t.value;persistMap('sh',k);logA('Shift start',dmy(date)+' · '+t.dataset.sh+' = '+t.value);render()}
-  else if(t.id==='agent-select'){window.MONTH_SELECTED_AGENT=t.value;render()}
-});
-render();
-document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))openExport();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
-document.addEventListener('input',e=>{if(e.target.id==='q'){window.Q=e.target.value;const p=e.target.selectionStart;render();const q=$('#q');if(q){q.focus();q.setSelectionRange(p,p)}}});
-document.addEventListener('click',e=>{if(e.target.id==='so')firebase.auth().signOut()});
-document.addEventListener('click',async e=>{const id=e.target.id;
-  if(id==='xc'||id==='mdl'){const m=document.getElementById('mdl');if(m)m.remove();return}
-  if(id==='nx1'){saveNote(true);return}
-  if(id==='nx0'||id==='nxs'){saveNote(false);return}
-  if(id==='addday'){WANT=date;pickFile();return}
-  if(id==='x1'||id==='x2'){const msg=$('#xm'),btn=e.target;btn.disabled=true;msg.textContent='Preparing\u2026';
-    try{let dates;
-      if(id==='x1')dates=[date];
-      else{const f=$('#xf').value,t=$('#xt').value;if(!f||!t||f>t)throw new Error('choose a valid period');
-        dates=[];for(let d=f;d<=t&&dates.length<=366;d=addDays(d,1))dates.push(d);if(dates.length>366)throw new Error('maximum period is 366 days')}
-      await exportReport(dates,id==='x1'?'day':'period');msg.textContent='Done \u2713'}
-    catch(err){msg.textContent='Failed: '+err.message}
-    btn.disabled=false}});
-
-boot();
-</script></body></html>
+  const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.
