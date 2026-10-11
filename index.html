@@ -286,8 +286,6 @@ function monthly(){
 
   const selectedAgent=window.MONTH_SELECTED_AGENT||(alphaAgents[0]?alphaAgents[0].name:'');
   const agentLogs=(dList[selectedAgent]||[]);
-  
-  // تصميم جديد ومميز لجدول تفاصيل الموظف بدون أشرطة تمرير وبمسافات مضغوطة وجميلة
   const detailRows=agentLogs.map(l=>`
     <tr style="transition:background 0.2s">
       <td style="padding:6px 12px;border-bottom:1px solid var(--bd);font-weight:500">${l.date}</td>
@@ -310,8 +308,30 @@ function monthly(){
     </div>
   </div>
   
-  <h2>Monthly Summary (Unexcused Violations Only)</h2>
-  <div class="card"><table><thead><tr><th>Employee</th><th class="c">Late</th><th class="c">Break Overrun</th><th class="c">CNA</th><th class="c">Work Overrun</th><th class="c">Emergency</th><th class="c">Total Real Violations</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <!-- تم تصميم العنوان ورأس الجدول بشكل أنيق ومميز مع تقليص المسافات والعرض -->
+  <div style="margin:20px 0 8px;display:flex;align-items:center;justify-content:space-between;">
+    <h2 style="font-size:15px;font-weight:700;color:var(--tx);margin:0;display:flex;align-items:center;gap:8px;">
+      <span style="width:4px;height:16px;background:var(--pri);border-radius:2px;display:inline-block;"></span>
+      Monthly Summary (Unexcused Violations Only)
+    </h2>
+  </div>
+  
+  <div class="card" style="border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="background:linear-gradient(135deg,var(--hd),#1e3a8a);color:#fff;">
+          <th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:.4px;color:#fff;">EMPLOYEE</th>
+          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">LATE</th>
+          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">BREAK OVERRUN</th>
+          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">CNA</th>
+          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">WORK OVERRUN</th>
+          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">EMERGENCY</th>
+          <th style="padding:8px 12px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">TOTAL REAL VIOLATIONS</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
   
   <h2>🔍 Agent Daily Incident Lookup</h2>
   <div class="card" style="max-width:750px;padding:16px 20px;border-radius:12px;background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,0.04)">
