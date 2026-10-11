@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Performance Control Center</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -191,9 +192,6 @@ function dash(){
     ${cell(date,o,'cna',o.cna,o.cna)}
     ${cell(date,o,'early',o.outEarly,formatTimeOut(o.out),'w')}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
-  // Professional Styled Excel Export
-  EXP={n:'Performance_Report_'+date,sh:[['Daily Report',[['Performance Control Center - Daily Report'],['Report Date:',dmy(date)],[''],['Agent','Shift start','Login','First ready','Late','Logouts','Emergency','Break Total','Work Total','Call No Answer','Logout Time','Status','Excused Violations'],...rs.map(o=>[o.name,o.hasLogin?hms(o.shift):'',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'',o.lateV?formatDuration(mn(o.late)):'0 min',o.lo.n?(o.lo.n+' / '+formatDuration(mn(o.lo.s))):'0',o.em.n?(o.em.n+' / '+formatDuration(mn(o.em.s))):'0',formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,formatTimeOut(o.out),nv(o)?(nv(o)+' open'):'Clean',viol(date,o).filter(v=>exd(date,o.name,v.t)).map(v=>v.l).join('; ')])]]]};
-  
   return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
   <div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
   <div class="k"><b>${ct(o=>o.lateV)}</b><span>Late arrivals</span></div>
@@ -242,15 +240,112 @@ function data(){
 
 function logv(){return`<p class="hint">Audit trail</p><div class="card"><table style="min-width:600px"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th></tr></thead><tbody>${(LOGS||[]).map(x=>`<tr><td>${new Date(x.t).toLocaleString()}</td><td>${esc(x.n||'')}</td><td>${esc(x.a)}</td><td>${esc(x.d)}</td></tr>`).join('')||'<tr><td colspan=4 class="empty">No logs</td></tr>'}</tbody></table></div>`}
 
-let EXP=null;
 const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
 
-function copyBox(){const m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px';
-  m.innerHTML=`<div class="card" style="padding:20px;width:min(600px,100%)"><button class="b p" onclick="this.closest('div').parentElement.remove()">Close</button></div>`;
-  document.body.appendChild(m)}
+/* Advanced Styled Excel Export using ExcelJS */
+async function exportX(){
+  if(!date) return;
+  const names=Object.keys(S.days[date]||{}).sort();
+  if(!names.length){ alert("No data to export"); return; }
+  
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Daily Performance');
+  
+  // Title Header
+  sheet.mergeCells('A1:L1');
+  const titleCell = sheet.getCell('A1');
+  titleCell.value = 'PERFORMANCE CONTROL CENTER - DAILY REPORT';
+  titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0F1C3F' } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  sheet.getRow(1).height = 30;
 
-async function exportX(){if(!EXP)return;const wb=XLSX.utils.book_new();EXP.sh.forEach(s=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s[1]),s[0]));
-  try{XLSX.writeFile(wb,EXP.n+'.xlsx')}catch(e){copyBox()}}
+  // Date Subheader
+  sheet.mergeCells('A2:L2');
+  const dateCell = sheet.getCell('A2');
+  dateCell.value = 'Report Date: ' + dmy(date);
+  dateCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: '1D4ED8' } };
+  dateCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F3F5F9' } };
+  dateCell.alignment = { vertical: 'middle', horizontal: 'left' };
+  sheet.getRow(2).height = 22;
+
+  sheet.addRow([]); // Blank Row 3
+
+  // Table Headers
+  const headers = ['Agent Name', 'Shift Start', 'Login Time', 'First Ready', 'Late Arrival', 'Logouts', 'Emergency', 'Break Total', 'Work Total', 'Call No Ans', 'Logout Time', 'Status'];
+  const headerRow = sheet.addRow(headers);
+  headerRow.height = 25;
+  
+  headerRow.eachCell((cell) => {
+    cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E3A8A' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'medium'}, right: {style:'thin'} };
+  });
+
+  // Data Rows with Colored Violations
+  names.forEach(n => {
+    const o = calc(date, n);
+    const rowValues = [
+      o.name,
+      o.hasLogin ? hms(o.shift) : 'Prev. day',
+      o.hasLogin ? hms(o.login) : 'Prev. day',
+      o.first != null ? hms(o.first) : '—',
+      o.lateV ? formatDuration(mn(o.late)) : '0 min',
+      o.lo.n ? (o.lo.n + ' / ' + formatDuration(mn(o.lo.s))) : '0',
+      o.em.n ? (o.em.n + ' / ' + formatDuration(mn(o.em.s))) : '0',
+      formatDuration(mn(o.brk)),
+      formatDuration(mn(o.work)),
+      o.cna,
+      formatTimeOut(o.out),
+      nv(o) ? (nv(o) + ' open') : 'Clean'
+    ];
+    
+    const row = sheet.addRow(rowValues);
+    row.height = 20;
+
+    // Apply borders & alignment
+    row.eachCell((cell, colNum) => {
+      cell.font = { name: 'Segoe UI', size: 10 };
+      cell.alignment = { vertical: 'middle', horizontal: colNum === 1 ? 'left' : 'center' };
+      cell.border = { top: {style:'thin', color:{argb:'E1E6EF'}}, left: {style:'thin', color:{argb:'E1E6EF'}}, bottom: {style:'thin', color:{argb:'E1E6EF'}}, right: {style:'thin', color:{argb:'E1E6EF'}} };
+    });
+
+    // Highlight Violations with Red Fill (matching web app)
+    const redFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FDE8E8' } };
+    const redFont = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'B91C1C' } };
+
+    if (o.lateV && !exd(date, o.name, 'late')) { row.getCell(5).fill = redFill; row.getCell(5).font = redFont; }
+    if (o.lo.n && !exd(date, o.name, 'logout')) { row.getCell(6).fill = redFill; row.getCell(6).font = redFont; }
+    if (o.em.n && !exd(date, o.name, 'emerg')) { row.getCell(7).fill = redFill; row.getCell(7).font = redFont; }
+    if (o.brkV && !exd(date, o.name, 'brk')) { row.getCell(8).fill = redFill; row.getCell(8).font = redFont; }
+    if (o.workV && !exd(date, o.name, 'work')) { row.getCell(9).fill = redFill; row.getCell(9).font = redFont; }
+    if (o.cna && !exd(date, o.name, 'cna')) { row.getCell(10).fill = redFill; row.getCell(10).font = redFont; }
+    
+    if (nv(o)) { row.getCell(12).fill = redFill; row.getCell(12).font = redFont; }
+    else { row.getCell(12).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: '15803D' } }; }
+  });
+
+  // Auto-fit Column Widths
+  sheet.columns.forEach(column => {
+    let maxLength = 12;
+    column.eachCell({ includeEmpty: false }, cell => {
+      const columnLength = cell.value ? cell.value.toString().length : 10;
+      if (columnLength > maxLength) maxLength = columnLength;
+    });
+    column.width = maxLength + 4;
+  });
+
+  // Save to Excel file
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'Performance_Report_' + date + '.xlsx';
+  anchor.click();
+  window.URL.revokeObjectURL(url);
+}
 
 function render(){
   let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log']];
