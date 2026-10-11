@@ -308,7 +308,6 @@ function monthly(){
     </div>
   </div>
   
-  <!-- تم تصميم العنوان ورأس الجدول بشكل أنيق ومميز مع تقليص المسافات والعرض -->
   <div style="margin:20px 0 8px;display:flex;align-items:center;justify-content:space-between;">
     <h2 style="font-size:15px;font-weight:700;color:var(--tx);margin:0;display:flex;align-items:center;gap:8px;">
       <span style="width:4px;height:16px;background:var(--pri);border-radius:2px;display:inline-block;"></span>
@@ -319,14 +318,14 @@ function monthly(){
   <div class="card" style="border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
     <table style="width:100%;border-collapse:collapse;">
       <thead>
-        <tr style="background:linear-gradient(135deg,var(--hd),#1e3a8a);color:#fff;">
-          <th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:.4px;color:#fff;">EMPLOYEE</th>
-          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">LATE</th>
-          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">BREAK OVERRUN</th>
-          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">CNA</th>
-          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">WORK OVERRUN</th>
-          <th style="padding:8px 8px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">EMERGENCY</th>
-          <th style="padding:8px 12px;text-align:center;font-size:11px;letter-spacing:.4px;color:#fff;">TOTAL REAL VIOLATIONS</th>
+        <tr style="background:#0f1c3f;color:#ffffff;">
+          <th style="padding:10px 14px;text-align:left;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">EMPLOYEE</th>
+          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">LATE</th>
+          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">BREAK OVERRUN</th>
+          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">CNA</th>
+          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">WORK OVERRUN</th>
+          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">EMERGENCY</th>
+          <th style="padding:10px 14px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">TOTAL REAL VIOLATIONS</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -461,9 +460,9 @@ async function exportReport(dates,mode){
     pick.value=dmy(first);
     pick.dataValidation={type:'list',allowBlank:false,showErrorMessage:true,errorTitle:'Invalid date',error:'Choose a date from the list.',formulae:['Lists!$A$2:$A$'+(dates.length+1)]};
     const hint=ws.getCell('C2');hint.value='\u25c0 choose a date from the list \u2014 the table shows only that date';hint.font=EF({italic:true,color:{argb:EC.mut}});
-    kpiCells(ws,[{formula:tab+'('+rg('T')+')'},{formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('N')+'=1))'},
-      {formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('O')+'=1))'},
-      {formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),('+rg('N')+'=1)+('+rg('O')+'=1)+('+rg('P')+'=1)+('+rg('Q')+'=1)+('+rg('R')+'=1))'}]);
+    kpiCells(ws,[{formula:tab+'('+rg('T')+')'},{formula:tab+'PRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('N')+'=1))'},
+      {formula:tab+'PRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('O')+'=1))'},
+      {formula:tab+'PRODUCT(--ISNUMBER('+rg('T')+'),('+rg('N')+'=1)+('+rg('O')+'=1)+('+rg('P')+'=1)+('+rg('Q')+'=1)+('+rg('R')+'=1))'}]);
     const nd=ws.getCell('A4');nd.value={formula:'IF(COUNT('+rg('T')+')=0,"No data for this date \u2014 add its rows in the Data sheet (see Guide).","")'};nd.font=EF({italic:true,bold:true,color:{argb:EC.redt}});
     ws.getColumn(14).hidden=true;
     for(let i=0;i<N;i++){const r=TOP+i,row=ws.getRow(r);row.height=20;
