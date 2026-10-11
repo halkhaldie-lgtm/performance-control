@@ -115,40 +115,22 @@ function importFile(f){
       else if(/^logout/i.test(st))ev=[t[1],'O',re,0];
       else if(/^ready/i.test(st)){if(!seenR[k]){seenR[k]=1;ev=[t[1],'R','',0]}}
       else if(/^not ready/i.test(st)&&/^(break|work)$|no answer/i.test(re))ev=[t[1],'N',re,d];
-      else if(/^(reserved|receiv)/i.test(st)&&d<=10)ev=[t[1],'V','',d];
       if(!ev)return;(ag[t[0]]=ag[t[0]]||{});(ag[t[0]][name]=ag[t[0]][name]||[]).push(ev)});
     const ds=Object.keys(ag);if(!ds.length){alert('No valid rows');return}
     ds.sort();
-    if(WANT&&!ds.includes(WANT)){alert('This file has no data for '+dmy(WANT)+'.\nIt contains: '+ds.map(dmy).join(', ')+'.\nNothing was imported.');WANT=null;return}
-    const dup=ds.filter(d=>S.idx[d]);
-    const apply=async keep=>{for(const d of keep){S.days[d]=ag[d];S.idx[d]={a:Object.keys(ag[d]).length,t:Date.now(),f:f.name||'',p:0};await saveDay(d);logA('Import',dmy(d)+' \u00b7 '+(f.name||'file')+' \u00b7 '+S.idx[d].a+' agents')}
-      if(keep.length){await saveIdx();date=(WANT&&keep.includes(WANT))?WANT:keep[keep.length-1];month=date.slice(0,7);tab='dash'}WANT=null;render()};
-    if(dup.length)ask(dup,ag,apply,ds);else apply(ds);
+    (async()=>{for(const d of ds){S.days[d]=ag[d];S.idx[d]={a:Object.keys(ag[d]).length,t:Date.now(),f:f.name||'',p:0};await saveDay(d)}
+    await saveIdx();date=ds[ds.length-1];month=date.slice(0,7);tab='dash';render()})();
   };rd.readAsArrayBuffer(f)}
 
-let WANT=null;
-const rcnt=o=>(o.recv[1]||0)+(o.recv[2]||0);
-const MS='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px';
-const adj=m=>{const y=+m.slice(0,4),k=+m.slice(5),f=(a,b)=>a+'-'+pad(b);return[m,k===1?f(y-1,12):f(y,k-1),k===12?f(y+1,1):f(y,k+1)]};
-function pickFile(){const i=document.createElement('input');i.type='file';i.accept='.xlsx,.xls';i.onchange=()=>{if(i.files[0])importFile(i.files[0])};i.click()}
-function ask(dup,ag,apply,ds){const m=document.createElement('div');m.id='mdl';m.style.cssText=MS;
-  m.innerHTML=`<div class="card" style="padding:22px;max-width:480px;overflow:visible;margin:0"><h2 style="margin-top:0">Data for this date already exists</h2><p>${dup.map(d=>`<b>${dmy(d)}</b> \u2014 saved: ${S.idx[d].a} agents \u00b7 new file: ${Object.keys(ag[d]).length} agents`).join('<br>')}</p><p>Replace the saved data with this file, or cancel?</p><div class="bar" style="margin:0"><button class="b p" id="mr">Replace</button><button class="b" id="mc">Cancel</button></div></div>`;
-  document.body.appendChild(m);$('#mr').onclick=()=>{m.remove();apply(ds)};$('#mc').onclick=()=>{m.remove();WANT=null;apply(ds.filter(d=>!dup.includes(d)))}}
-async function logA(a,d){const r={t:Date.now(),a,d};if(DB){try{await DB.collection('log').add(Object.assign({u:ME,n:MEN},r))}catch(e){}}else{S.log=(S.log||[]).concat([r]).slice(-500);save()}}
-async function delDay(d){const p=(S.idx[d]||{}).p||1;delete S.days[d];delete S.idx[d];
-  if(DB){for(let i=0;i<p;i++)try{await DB.doc('days/'+d+'_'+i).delete()}catch(e){}}
-  await saveIdx();logA('Delete day',dmy(d));render()}
-
-/* An agent's shift can cross midnight. A day is "open" if its last stored event is not a Logout;
-   then the next day's events up to its first Logout belong to this shift (and are removed from that next day). */
-const rawEv=(dt,name)=>((S.days[dt]&&S.days[dt][name])||[]).slice().sort((a,b)=>a[0]-b[0]);
-const isOpen=(dt,name)=>{const e=rawEv(dt,name);return e.length>0&&e[e.length-1][1]!=='O'};
-const tailLen=(dt,name)=>{const e=rawEv(dt,name),i=e.findIndex(x=>x[1]==='O');return i<0?e.length:i+1};
 function getEvents(dt,name){
-  let evs=rawEv(dt,name);
-  if(isOpen(addDays(dt,-1),name))evs=evs.slice(tailLen(dt,name));
-  if(isOpen(dt,name)){const nx=addDays(dt,1),e=rawEv(nx,name);evs=evs.concat(e.slice(0,tailLen(nx,name)).map(x=>[x[0]+86400,x[1],x[2],x[3]]))}
-  return evs}
+  let evs=(S.days[dt]&&S.days[dt][name])?[...S.days[dt][name]]:[];
+  const nxt=addDays(dt,1);
+  if(S.days[nxt]&&S.days[nxt][name]){
+    const nxtEvs=S.days[nxt][name].map(e=>[e[0]+86400,e[1],e[2],e[3]]);
+    evs=evs.concat(nxtEvs);
+  }
+  return evs.sort((a,b)=>a[0]-b[0]);
+}
 
 function calc(dt,name){
   const ev=getEvents(dt,name);
@@ -157,13 +139,12 @@ function calc(dt,name){
   const fr=li?ev.find(e=>e[1]==='R'&&e[0]>=login):null;
   const late=fr?Math.max(0,fr[0]-shift):0;
   const o={name,login,shift,hasLogin:!!li,outEm:false,auto:sh==null,first:fr?fr[0]:null,late,lateV:late>LIM.grace,
-    lo:{n:0,s:0},em:{n:0,s:0},brk:0,work:0,cna:0,out:null,outEarly:0,recv:{},rt:[]};
+    lo:{n:0,s:0},em:{n:0,s:0},brk:0,work:0,cna:0,out:null,outEarly:0};
   ev.forEach((e,i)=>{
     if(e[1]==='O'){if(li&&e[0]<login)return;const nx=ev.slice(i+1).find(x=>x[1]==='I');
       if(!nx){o.out=e[0];if(/emergency/i.test(e[2])){o.em.n++;o.outEm=true}return}
       const g=nx[0]-e[0];if(g>LIM.emerg){const b=/emergency/i.test(e[2])?o.em:o.lo;b.n++;b.s+=g}}
     else if(e[1]==='N'){if(/^break/i.test(e[2]))o.brk+=e[3];else if(/^work$/i.test(e[2]))o.work+=e[3];else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++}});
-  rawEv(dt,name).forEach(e=>{if(e[1]==='V'){o.recv[e[3]]=(o.recv[e[3]]||0)+1;if(e[3]<3)o.rt.push(hms(e[0])+' ('+e[3]+'s)')}});
   if(li&&!o.outEm&&o.out!=null&&o.out<login+LIM.shift)o.outEarly=login+LIM.shift-o.out;
   o.brkV=o.brk>LIM.brk;o.workV=o.work>LIM.work;
   return o}
@@ -173,14 +154,13 @@ const exd=(d,n,t)=>!!S.ex[ek(d,n,t)];
 function viol(dt,o){
   const v=[];
   if(o.lateV)v.push({t:'late',l:'Late arrival',v:formatDuration(mn(o.late))});
-  if(o.lo.n)v.push({t:'logout',l:'Logout ×'+o.lo.n,v:formatDuration(mn(o.lo.s))});
   if(o.em.n)v.push({t:'emerg',l:'Emergency ×'+o.em.n,v:formatDuration(mn(o.em.s))});
   if(o.brkV)v.push({t:'brk',l:'Break overrun',v:formatDuration(mn(o.brk-LIM.brk))+' over'});
   if(o.workV)v.push({t:'work',l:'Work overrun',v:formatDuration(mn(o.work-LIM.work))+' over'});
   if(o.cna)v.push({t:'cna',l:'Call No Answer',v:o.cna+' call(s)'});
   if(o.outEarly)v.push({t:'early',l:'Early logout',v:formatDuration(mn(o.outEarly))+' short'});
   return v}
-const TY=[['late','Late'],['logout','Logout'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['early','Early Logout']];
+const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['early','Early Logout']];
 
 function cell(dt,o,t,bad,txt,cls){
   if(!bad)return`<td class="c ok">${txt}</td>`;
@@ -195,7 +175,7 @@ function formatTimeOut(ts){
 
 function dash(){
   const q=(window.Q||'').toLowerCase();const names=Object.keys(S.days[date]||{}).sort().filter(n=>n.toLowerCase().includes(q));
-  if(!names.length)return Object.keys(S.days[date]||{}).length?`<div class="card"><div class="empty">No agent matches your search.</div></div>`:`<div class="card"><div class="empty">No data for ${dmy(date||'—')}.<br><br><button class="b p" id="addday">+ Add data for this date</button><div class="tag" style="margin-top:8px">Choose the report file that contains ${dmy(date||'')}. Other dates are not affected.</div></div></div>`;
+  if(!names.length)return`<div class="card"><div class="empty">No data for ${dmy(date||'—')}.</div></div>`;
   const rs=names.map(n=>calc(date,n));let tv=0,ex=0;
   rs.forEach(o=>viol(date,o).forEach(v=>exd(date,o.name,v.t)?ex++:tv++));
   const ct=f=>rs.filter(o=>f(o)).length;
@@ -204,20 +184,19 @@ function dash(){
     <td>${o.hasLogin?`<input class="t" type="time" data-sh="${o.name}" value="${hms(o.shift).slice(0,5)}">`:'<span class="tag">Prev. day</span>'}</td>
     <td>${o.hasLogin?hms(o.login):'Prev. day'}</td><td>${o.first!=null?hms(o.first):'—'}</td>
     ${cell(date,o,'late',o.lateV,formatDuration(mn(o.late)))}
-    ${cell(date,o,'logout',o.lo.n,o.lo.n?o.lo.n+' / '+formatDuration(mn(o.lo.s)):'0')}
     ${cell(date,o,'emerg',o.em.n,o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0')}
     ${cell(date,o,'brk',o.brkV,formatDuration(mn(o.brk)))}
     ${cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
     ${cell(date,o,'cna',o.cna,o.cna)}
-    ${cell(date,o,'early',o.outEarly,formatTimeOut(o.out),'w')}<td class="c n" title="${o.rt.join(', ')}">${rcnt(o)}</td><td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
+    ${cell(date,o,'early',o.outEarly,formatTimeOut(o.out),'w')}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
   return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
   <div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
   <div class="k"><b>${ct(o=>o.lateV)}</b><span>Late arrivals</span></div>
-  <div class="k"><b>${ct(o=>o.lo.n+o.em.n)}</b><span>Disconnections</span></div>
+  <div class="k"><b>${ct(o=>o.em.n)}</b><span>Disconnections</span></div>
   <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
-  <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((a,o)=>a+rcnt(o),0)}</b><span>Received (1,2 sec)</span></div></div>
-  <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First ready</th><th>Late</th><th>Logout (count/time)</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
+  <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div></div>
+  <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First ready</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
 
 function monthly(){
   const ds=Object.keys(S.days).filter(d=>d.startsWith(month)).sort();
@@ -232,7 +211,7 @@ function monthly(){
   const dl=det.map(r=>`<tr><td class="n">${r.n}</td><td>${dmy(r.d)}</td><td>${r.v.l}</td><td>${r.v.v}</td>
     <td class="c ${r.x?'x':'v'}" data-ex="${r.d}|${r.n}|${r.v.t}">${r.x?'Excused':'Cancel'}</td></tr>`).join('');
   return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Monthly Report: ${month}</div>
-  <div class="card"><table><thead><tr><th>Employee</th>${TY.map(y=>`<th class="c">${y[1]}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>${rows||'<tr><td colspan=9 class="empty">No violations</td></tr>'}</tbody></table></div>
+  <div class="card"><table><thead><tr><th>Employee</th>${TY.map(y=>`<th class="c">${y[1]}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>${rows||'<tr><td colspan=8 class="empty">No violations</td></tr>'}</tbody></table></div>
   <h2>Incident log</h2><div class="card"><table><thead><tr><th>Employee</th><th>Date</th><th>Type</th><th>Detail</th></tr></thead><tbody>${dl}</tbody></table></div>`}
 
 function adminPanel(){
@@ -266,134 +245,131 @@ function logv(){
 const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
 const nvForDate=(dt,o)=>viol(dt,o).filter(v=>!exd(dt,o.name,v.t)).length;
 
-/* ---------- Report download (single date / period with date dropdown) ---------- */
-const EC={navy:'FF0F1C3F',hd:'FF1E3A8A',pri:'FF1D4ED8',red:'FFFDE8E8',redt:'FFB91C1C',amb:'FFFFF4D6',ambt:'FF92400E',grn:'FFE3F6EA',grnt:'FF15803D',bd:'FFE1E6EF',wh:'FFFFFFFF',mut:'FF6B7791'};
-const RH=['Agent Name','Shift Start','Login Time','First Ready','Late Arrival','Logouts','Emergency','Break Total','Work Total','Call No Ans','Logout Time','Received','Status'];
-const RW=[26,12,12,12,13,15,15,13,13,12,16,11,12];
-const EF=(o)=>Object.assign({name:'Segoe UI',size:10},o||{});
-const fillOf=c=>({type:'pattern',pattern:'solid',fgColor:{argb:c},bgColor:{argb:c}});
-const edge=()=>({style:'thin',color:{argb:EC.bd}});
-const BORD=()=>({top:edge(),left:edge(),bottom:edge(),right:edge()});
+/* Interactive Dashboard Export with Date Dropdown (Excluding Logout column) */
+async function exportX(){
+  const m = date.slice(0, 7);
+  const ds = Object.keys(S.days).filter(d => d.startsWith(m)).sort();
+  if(!ds.length){ alert("No data to export"); return; }
+  
+  const workbook = new ExcelJS.Workbook();
+  const mainSheet = workbook.addWorksheet('Dashboard');
+  const dataSheet = workbook.addWorksheet('Data_Store');
 
-function repRow(d,o){
-  const f=(bad,t)=>bad?(exd(d,o.name,t)?2:1):0,n=nvForDate(d,o);
-  return{d,vals:[o.name,o.hasLogin?hms(o.shift):'Prev. day',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'\u2014',
-    formatDuration(mn(o.late)),o.lo.n?o.lo.n+' / '+formatDuration(mn(o.lo.s)):'0',o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',
-    formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,formatTimeOut(o.out),rcnt(o),n?n+' open':'Clean'],
-    fl:[f(o.lateV,'late'),f(o.lo.n,'logout'),f(o.em.n,'emerg'),f(o.brkV,'brk'),f(o.workV,'work'),f(o.cna,'cna'),f(o.outEarly,'early')]}}
+  // Populate hidden Data_Store sheet (excluding Logout column)
+  dataSheet.addRow(['DateKey', 'DateFormatted', 'AgentName', 'ShiftStart', 'LoginTime', 'FirstReady', 'LateArrival', 'Emergency', 'BreakTotal', 'WorkTotal', 'CallNoAns', 'LogoutTime', 'Status']);
+  
+  let dataRowCount = 1;
+  const uniqueDates = [];
 
-async function collectRows(dates){
-  const ms=new Set();[addDays(dates[0],-1),...dates,addDays(dates[dates.length-1],1)].forEach(d=>ms.add(d.slice(0,7)));
-  for(const m of ms)await loadMonth(m);
-  const out=[];dates.forEach(d=>Object.keys(S.days[d]||{}).sort().forEach(n=>out.push(repRow(d,calc(d,n)))));
-  return out}
+  ds.forEach(d => {
+    const formattedDate = dmy(d);
+    if (!uniqueDates.includes(formattedDate)) uniqueDates.push(formattedDate);
+    const names = Object.keys(S.days[d]||{}).sort();
+    
+    names.forEach(n => {
+      const o = calc(d, n);
+      dataRowCount++;
+      dataSheet.addRow([
+        d,
+        formattedDate,
+        o.name,
+        o.hasLogin ? hms(o.shift) : 'Prev. day',
+        o.hasLogin ? hms(o.login) : 'Prev. day',
+        o.first != null ? hms(o.first) : '—',
+        o.lateV ? formatDuration(mn(o.late)) : '0 min',
+        o.em.n ? (o.em.n + ' / ' + formatDuration(mn(o.em.s))) : '0',
+        formatDuration(mn(o.brk)),
+        formatDuration(mn(o.work)),
+        o.cna,
+        formatTimeOut(o.out),
+        nvForDate(d, o) ? (nvForDate(d, o) + ' open') : 'Clean'
+      ]);
+    });
+  });
 
-function styleBody(cell,c,fl){ // c = 1-based column on the Report sheet
-  cell.font=EF();cell.alignment={vertical:'middle',horizontal:c===1?'left':'center'};cell.border=BORD();
-  if(c>=5&&c<=11){const v=fl[c-5];
-    if(v===1){cell.fill=fillOf(c===11?EC.amb:EC.red);cell.font=EF({bold:true,color:{argb:c===11?EC.ambt:EC.redt}})}
-    else if(v===2){cell.fill=fillOf(EC.grn);cell.font=EF({color:{argb:EC.grnt},strike:true})}}
-  if(c===13){const s=String(cell.value);cell.font=EF({bold:true,color:{argb:s==='Clean'?EC.grnt:EC.redt}});cell.fill=fillOf(s==='Clean'?EC.grn:EC.red)}}
+  // Setup Title on Main Dashboard Sheet
+  mainSheet.mergeCells('A1:K1');
+  const titleCell = mainSheet.getCell('A1');
+  titleCell.value = 'PERFORMANCE CONTACT CENTER - DAILY REPORT';
+  titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0F1C3F' } };
+  mainSheet.getRow(1).height = 30;
 
-function headStyle(ws,rowNo){const r=ws.getRow(rowNo);r.height=26;
-  RH.forEach((h,i)=>{const c=r.getCell(i+1);c.value=h;c.font=EF({bold:true,color:{argb:EC.wh}});c.fill=fillOf(EC.hd);c.alignment={vertical:'middle',horizontal:'center',wrapText:true};c.border=BORD()})}
+  // Dropdown Selection Box at Row 2
+  mainSheet.getCell('A2').value = 'Report Date:';
+  mainSheet.getCell('A2').font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: '1D4ED8' } };
+  
+  const datePickerCell = mainSheet.getCell('B2');
+  datePickerCell.value = dmy(date);
+  datePickerCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFF' } };
+  datePickerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1D4ED8' } };
+  datePickerCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  mainSheet.getRow(2).height = 24;
 
-function titleBlock(ws,text){
-  ws.mergeCells('A1:M1');const t=ws.getCell('A1');t.value=text;t.font=EF({size:14,bold:true,color:{argb:EC.wh}});t.fill=fillOf(EC.navy);t.alignment={vertical:'middle',horizontal:'left',indent:1};ws.getRow(1).height=32;
-  RW.forEach((w,i)=>{ws.getColumn(i+1).width=w})}
+  datePickerCell.dataValidation = {
+    type: 'list',
+    allowBlank: false,
+    formulae: [`"${uniqueDates.join(',')}"`]
+  };
 
-function kpiCells(ws,vals){ // vals: [agents, late, disconnections, open]; numbers or {formula}
-  [['Agents',vals[0]],['Late arrivals',vals[1]],['Disconnections',vals[2]],['Open violations',vals[3]]].forEach((k,i)=>{
-    const l=ws.getCell(3,1+i*3),v=ws.getCell(3,2+i*3);
-    l.value=k[0];l.font=EF({bold:true,color:{argb:EC.mut}});l.alignment={horizontal:'left'};
-    v.value=k[1];v.font=EF({size:12,bold:true,color:{argb:EC.pri}});v.alignment={horizontal:'left'}});
-  ws.getRow(3).height=22}
+  mainSheet.addRow([]); // Blank Row 3
 
-async function exportReport(dates,mode){
-  const rows=await collectRows(dates);
-  if(!rows.length)throw new Error(mode==='day'?'No data for '+dmy(dates[0]):'No data in this period');
-  const wb=new ExcelJS.Workbook();wb.calcProperties={fullCalcOnLoad:true};
-  const ws=wb.addWorksheet('Report',{views:[{state:'frozen',ySplit:5,showGridLines:false}]});
-  titleBlock(ws,'PERFORMANCE CONTACT CENTER \u2014 '+(mode==='day'?'DAILY REPORT':'PERIOD REPORT'));
-  const lab=ws.getCell('A2');lab.value='Report date:';lab.font=EF({size:11,bold:true,color:{argb:EC.pri}});
-  const pick=ws.getCell('B2');pick.font=EF({size:11,bold:true,color:{argb:EC.wh}});pick.fill=fillOf(EC.pri);pick.alignment={horizontal:'center',vertical:'middle'};pick.numFmt='@';ws.getRow(2).height=24;
-  headStyle(ws,5);
-  if(mode==='day'){
-    pick.value=dmy(dates[0]);
-    const cnt=k=>rows.filter(r=>r.fl[k]===1).length;
-    kpiCells(ws,[rows.length,cnt(0),rows.filter(r=>r.fl[1]===1||r.fl[2]===1).length,rows.reduce((a,r)=>a+r.fl.filter(x=>x===1).length,0)]);
-    rows.forEach((r,i)=>{const row=ws.getRow(6+i);row.height=20;r.vals.forEach((v,k)=>{const c=row.getCell(k+1);c.value=v;styleBody(c,k+1,r.fl)})});
-  }else{
-    const CAP=Math.max(2000,Math.ceil((rows.length+500)/500)*500),LAST=CAP+1,TOP=6,N=150;
-    const rg=c=>'Data!$'+c+'$2:$'+c+'$'+LAST;
-    // lists sheet (every calendar day of the period, as text)
-    const ls=wb.addWorksheet('Lists');ls.getColumn(1).numFmt='@';ls.getColumn(1).width=14;ls.getCell('A1').value='Dates';ls.getCell('A1').font=EF({bold:true});
-    dates.forEach((d,i)=>{ls.getCell(i+2,1).value=dmy(d)});
-    // data sheet
-    const ds=wb.addWorksheet('Data');
-    const DH=['Date','Agent Name','Shift Start','Login Time','First Ready','Late Arrival','Logouts','Emergency','Break Total','Work Total','Call No Ans','Logout Time','Received','Status','Flag Late','Flag Logout','Flag Emerg','Flag Break','Flag Work','Flag CNA','Flag Early','Match','Pos'];
-    DH.forEach((h,i)=>{const c=ds.getCell(1,i+1);c.value=h;c.font=EF({bold:true,color:{argb:EC.wh}});c.fill=fillOf(i<14?EC.hd:EC.mut);c.alignment={horizontal:'center',vertical:'middle',wrapText:true}});
-    ds.getColumn(1).numFmt='@';ds.getColumn(1).width=13;ds.getColumn(2).width=26;for(let i=3;i<=21;i++)ds.getColumn(i).width=13;
-    ds.getColumn(22).hidden=true;ds.getColumn(23).hidden=true;ds.views=[{state:'frozen',ySplit:1}];
-    rows.forEach((r,i)=>{const row=ds.getRow(2+i);row.getCell(1).value=dmy(r.d);r.vals.forEach((v,k)=>{row.getCell(2+k).value=v});r.fl.forEach((v,k)=>{row.getCell(15+k).value=v})});
-    for(let r=2;r<=LAST;r++){
-      const m='AND($A'+r+'<>"",TRIM($A'+r+')=TRIM(Report!$B$2))';
-      ds.getCell(r,22).value={formula:'IF('+m+',1,0)+N(V'+(r-1)+')'};
-      ds.getCell(r,23).value={formula:'IF('+m+',V'+r+',"")'}}
-    // report: date dropdown
-    const first=dates.includes(date)&&S.days[date]?date:(dates.find(d=>S.days[d])||dates[0]);
-    pick.value=dmy(first);
-    pick.dataValidation={type:'list',allowBlank:false,showErrorMessage:true,errorTitle:'Invalid date',error:'Choose a date from the list.',formulae:['Lists!$A$2:$A$'+(dates.length+1)]};
-    const hint=ws.getCell('C2');hint.value='\u25c0 choose a date from the list \u2014 the table shows only that date';hint.font=EF({italic:true,color:{argb:EC.mut}});
-    kpiCells(ws,[{formula:'COUNT('+rg('W')+')'},{formula:'SUMPRODUCT(--ISNUMBER('+rg('W')+'),--('+rg('O')+'=1))'},
-      {formula:'SUMPRODUCT(--ISNUMBER('+rg('W')+'),--(('+rg('P')+'=1)+('+rg('Q')+'=1)>0))'},
-      {formula:'SUMPRODUCT(--ISNUMBER('+rg('W')+'),('+rg('O')+'=1)+('+rg('P')+'=1)+('+rg('Q')+'=1)+('+rg('R')+'=1)+('+rg('S')+'=1)+('+rg('T')+'=1)+('+rg('U')+'=1))'}]);
-    const nd=ws.getCell('A4');nd.value={formula:'IF(COUNT('+rg('W')+')=0,"No data for this date \u2014 add its rows in the Data sheet (see Guide).","")'};nd.font=EF({italic:true,bold:true,color:{argb:EC.redt}});
-    ws.getColumn(15).hidden=true;
-    for(let i=0;i<N;i++){const r=TOP+i,row=ws.getRow(r);row.height=20;
-      row.getCell(15).value={formula:'IFERROR(MATCH(ROW()-'+(TOP-1)+','+rg('W')+',0),"")'};
-      for(let c=1;c<=13;c++){const L=String.fromCharCode(65+c),ix='INDEX('+rg(L)+',$O'+r+')',cell=row.getCell(c);
-        cell.value={formula:'IF($O'+r+'="","",IF('+ix+'="","",'+ix+'))'};
-        cell.font=EF();cell.alignment={vertical:'middle',horizontal:c===1?'left':'center'};cell.border=BORD()}}
-    const END=TOP+N-1,flag=(col)=>'INDEX('+rg(col)+',$O'+TOP+')';
-    const cf=(ref,formula,fill,font)=>ws.addConditionalFormatting({ref,rules:[{type:'expression',formulae:[formula],style:{fill:{type:'pattern',pattern:'solid',bgColor:{argb:fill}},font}}]});
-    ['O','P','Q','R','S','T','U'].forEach((fc,k)=>{const col=String.fromCharCode(69+k),ref=col+TOP+':'+col+END,early=k===6;
-      cf(ref,'AND($O'+TOP+'<>"",'+flag(fc)+'=1)',early?EC.amb:EC.red,{bold:true,color:{argb:early?EC.ambt:EC.redt}});
-      cf(ref,'AND($O'+TOP+'<>"",'+flag(fc)+'=2)',EC.grn,{strike:true,color:{argb:EC.grnt}})});
-    cf('M'+TOP+':M'+END,'M'+TOP+'="Clean"',EC.grn,{bold:true,color:{argb:EC.grnt}});
-    cf('M'+TOP+':M'+END,'AND(M'+TOP+'<>"",M'+TOP+'<>"Clean")',EC.red,{bold:true,color:{argb:EC.redt}});
-    // guide
-    const gs=wb.addWorksheet('Guide');gs.getColumn(1).width=120;
-    ['How to use this workbook',
-     '1. On the Report sheet pick a date in cell B2 (dropdown). The table shows only that date and replaces the previous one.',
-     '2. The dropdown lists every day of the period. A day with no data shows a red message under the title.',
-     '3. To add a missing date: open the Data sheet and type its rows under the last row, columns A to N. Nothing else needs to change.',
-     '4. Column A must be the date as text exactly like the dropdown (dd/mm/yyyy), for example 15/10/2026. The column is already formatted as Text.',
-     '5. Optional: type 1 (violation) or 2 (excused) in the Flag columns O to U to colour the matching cell red or green.',
-     '6. Do not edit the hidden helper columns V and W, or the formulas on the Report sheet.',
-     'Colours: red = violation, green with strikethrough = excused by management, amber = early logout.',
-     'Capacity: '+(CAP-1)+' data rows and 150 agents per date.'].forEach((t,i)=>{const c=gs.getCell(i+1,1);c.value=t;c.font=EF({bold:i===0,size:i===0?13:10});c.alignment={wrapText:true,vertical:'top'}});
+  // Table Headers (Excluding Logout)
+  const headers = ['Agent Name', 'Shift Start', 'Login Time', 'First Ready', 'Late Arrival', 'Emergency', 'Break Total', 'Work Total', 'Call No Ans', 'Logout Time', 'Status'];
+  const headerRow = mainSheet.addRow(headers);
+  headerRow.height = 25;
+  
+  headerRow.eachCell((cell) => {
+    cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E3A8A' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'medium'}, right: {style:'thin'} };
+  });
+
+  // Add 40 dynamic rows based on dropdown
+  for (let i = 1; i <= 40; i++) {
+    const formulaRow = [
+      `=IFERROR(INDEX(Data_Store!C$2:C$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!D$2:D$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!E$2:E$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!F$2:F$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!G$2:G$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!H$2:H$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!I$2:I$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!J$2:J$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!K$2:K$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!L$2:L$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!M$2:M$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`
+    ];
+
+    const row = mainSheet.addRow(formulaRow);
+    row.height = 20;
+
+    row.eachCell((cell, colNum) => {
+      cell.font = { name: 'Segoe UI', size: 10 };
+      cell.alignment = { vertical: 'middle', horizontal: colNum === 1 ? 'left' : 'center' };
+      cell.border = { top: {style:'thin', color:{argb:'E1E6EF'}}, left: {style:'thin', color:{argb:'E1E6EF'}}, bottom: {style:'thin', color:{argb:'E1E6EF'}}, right: {style:'thin', color:{argb:'E1E6EF'}} };
+    });
   }
-  const buf=await wb.xlsx.writeBuffer();
-  const url=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
-  const a=document.createElement('a');a.href=url;a.download=mode==='day'?'Performance_Report_'+dates[0]+'.xlsx':'Performance_Report_'+dates[0]+'_to_'+dates[dates.length-1]+'.xlsx';
-  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}
 
-function openExport(){
-  const y=+date.slice(0,4),mo=+date.slice(5,7),first=date.slice(0,7)+'-01',last=new Date(Date.UTC(y,mo,0)).toISOString().slice(0,10);
-  const m=document.createElement('div');m.id='mdl';m.style.cssText=MS;
-  m.innerHTML=`<div class="card" style="padding:22px;width:min(540px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:18px">Download report</h2>
-  <div class="card pad" style="margin-bottom:12px;overflow:visible"><h2 style="font-size:14px">1 \u00b7 Single date</h2><p class="hint" style="margin:0 0 10px">Report for <b>${dmy(date)}</b> (the date selected on the dashboard).</p><button class="b p" id="x1">\u2b07 Download this date</button></div>
-  <div class="card pad" style="margin-bottom:12px;overflow:visible"><h2 style="font-size:14px">2 \u00b7 Period with date dropdown</h2><div class="bar" style="margin:6px 0 10px"><label>From <input type="date" id="xf" value="${first}"></label><label>To <input type="date" id="xt" value="${last}"></label></div><p class="hint" style="margin:0 0 10px">The Excel file has a dropdown with every day in the period; choosing a date shows only that date. A date with no data can be added in the Data sheet without affecting the rest of the report.</p><button class="b p" id="x2">\u2b07 Download period</button></div>
-  <div class="bar" style="margin:0"><span class="tag" id="xm"></span><button class="b" id="xc" style="margin-left:auto">Close</button></div></div>`;
-  document.body.appendChild(m)}
+  mainSheet.columns.forEach(column => { column.width = 16; });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'Performance_Report_' + date + '.xlsx';
+  anchor.click();
+  window.URL.revokeObjectURL(url);
+}
 
 function render(){
   let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log']];
   if(USER_ROLE==='admin')navItems.push(['admin','Admin Panel']);
   $('#nav').innerHTML=navItems.map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
   const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
-  const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';Promise.all(adj(lm).map(loadMonth)).then(render);return}
+  const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';loadMonth(lm).then(render);return}
   if(tab==='log'&&LOGS===null){(async()=>{if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(200).get();LOGS=q.docs.map(x=>x.data())}catch(e){LOGS=[]}}else LOGS=[];render()})();return}
   const bar=tab==='dash'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button><input id="q" placeholder="Search..." value="${window.Q||''}"><button class="b p" data-exp="1" style="margin-left:auto">⬇ Download report</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"></div>`:'';
   $('#app').innerHTML=bar+({dash,mon:monthly,data,log:logv,admin:adminPanel}[tab])();
@@ -401,7 +377,7 @@ function render(){
 
 document.addEventListener('click',e=>{const t=e.target;let x;
   if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;render()}
-  else if(x=t.closest('[data-ex]')){const k=x.dataset.ex,on=!S.ex[k];if(on)S.ex[k]=1;else delete S.ex[k];persistMap('ex',k);logA(on?'Excuse':'Restore violation',k.split('|').reverse().join(' · '));render()}
+  else if(x=t.closest('[data-ex]')){const k=x.dataset.ex,on=!S.ex[k];if(on)S.ex[k]=1;else delete S.ex[k];persistMap('ex',k);render()}
   else if(x=t.closest('[data-step]')){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+ +x.dataset.step);date=d.toISOString().slice(0,10);render()}
   else if(x=t.closest('[data-del]')){if(confirm('Delete?'))delDay(x.dataset.del)}
   else if(t.id==='nu-btn'){
@@ -411,8 +387,8 @@ document.addEventListener('click',e=>{const t=e.target;let x;
       try{
         const secApp=firebase.initializeApp(FB_CONFIG,"SecAppCreate");
         const cred=await secApp.auth().createUserWithEmailAndPassword(em,pw);
-        await DB.doc('users/'+cred.user.uid).set({email:em,active:true,role:role,created:Date.now(),by:MEN});
-        await secApp.delete();logA('Create user',em+' · '+role);
+        await DB.doc('users/'+cred.user.uid).set({active:true, role:role});
+        await secApp.delete();
         $('#nu-msg').textContent='User created successfully!';
         $('#nu-em').value=''; $('#nu-pw').value='';
       }catch(err){alert('Error: '+err.message)}
@@ -423,23 +399,11 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.id==='dt'&&t.value){date=t.value;month=date.slice(0,7);render()}
   else if(t.id==='mo'&&t.value){month=t.value;render()}
   else if(t.id==='f'&&t.files[0])importFile(t.files[0]);
-  else if(t.dataset.sh){const k=date+'|'+t.dataset.sh;S.shifts[k]=t.value;persistMap('sh',k);logA('Shift start',dmy(date)+' · '+t.dataset.sh+' = '+t.value);render()}
+  else if(t.dataset.sh){const k=date+'|'+t.dataset.sh;S.shifts[k]=t.value;persistMap('sh',k);render()}
 });
 render();
-document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))openExport();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
-document.addEventListener('input',e=>{if(e.target.id==='q'){window.Q=e.target.value;const p=e.target.selectionStart;render();const q=$('#q');if(q){q.focus();q.setSelectionRange(p,p)}}});
+document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))exportX();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){window.Q=e.target.value;render()}});
 document.addEventListener('click',e=>{if(e.target.id==='so')firebase.auth().signOut()});
-document.addEventListener('click',async e=>{const id=e.target.id;
-  if(id==='xc'||id==='mdl'){const m=document.getElementById('mdl');if(m)m.remove();return}
-  if(id==='addday'){WANT=date;pickFile();return}
-  if(id==='x1'||id==='x2'){const msg=$('#xm'),btn=e.target;btn.disabled=true;msg.textContent='Preparing\u2026';
-    try{let dates;
-      if(id==='x1')dates=[date];
-      else{const f=$('#xf').value,t=$('#xt').value;if(!f||!t||f>t)throw new Error('choose a valid period');
-        dates=[];for(let d=f;d<=t&&dates.length<=366;d=addDays(d,1))dates.push(d);if(dates.length>366)throw new Error('maximum period is 366 days')}
-      await exportReport(dates,id==='x1'?'day':'period');msg.textContent='Done \u2713'}
-    catch(err){msg.textContent='Failed: '+err.message}
-    btn.disabled=false}});
-
 boot();
 </script></body></html>
