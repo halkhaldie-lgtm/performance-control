@@ -37,7 +37,7 @@ header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px 
 <main id="app"></main>
 <script>
 const LIM={grace:300,emerg:180,brk:43*60,work:300,cna:6,shift:8*3600};
-let S={days:{},idx:{},shifts:{},ex:{},recv:'1,2'},tab='dash',date='',month='';const FB_CONFIG={apiKey:"AIzaSyC5wAmajiFgKEAfi4Ay0ZA1QGL-KS4K9zo",authDomain:"performance-control-ab7f9.firebaseapp.com",projectId:"performance-control-ab7f9",storageBucket:"performance-control-ab7f9.firebasestorage.app",messagingSenderId:"599359001764",appId:"1:599359001764:web:8ae96947247d8036b60231"};
+let S={days:{},idx:{},shifts:{},ex:{}},tab='dash',date='',month='';const FB_CONFIG={apiKey:"AIzaSyC5wAmajiFgKEAfi4Ay0ZA1QGL-KS4K9zo",authDomain:"performance-control-ab7f9.firebaseapp.com",projectId:"performance-control-ab7f9",storageBucket:"performance-control-ab7f9.firebasestorage.app",messagingSenderId:"599359001764",appId:"1:599359001764:web:8ae96947247d8036b60231"};
 let MEN='',DB=null,ME=null,LOADED={},LOGS=null,USER_ROLE='editor';
 try{const r=localStorage.getItem('pcc_v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
 const save=()=>{if(DB)return;try{localStorage.setItem('pcc_v1',JSON.stringify(S))}catch(e){}};
@@ -114,7 +114,6 @@ function importFile(f){
       else if(/^logout/i.test(st))ev=[t[1],'O',re,0];
       else if(/^ready/i.test(st)){if(!seenR[k]){seenR[k]=1;ev=[t[1],'R','',0]}}
       else if(/^not ready/i.test(st)&&/^(break|work)$|no answer/i.test(re))ev=[t[1],'N',re,d];
-      else if(/^(reserved|receiv)/i.test(st)&&d<=10)ev=[t[1],'V','',d];
       if(!ev)return;(ag[t[0]]=ag[t[0]]||{});(ag[t[0]][name]=ag[t[0]][name]||[]).push(ev)});
     const ds=Object.keys(ag);if(!ds.length){alert('No valid rows');return}
     ds.sort();
@@ -139,13 +138,12 @@ function calc(dt,name){
   const fr=li?ev.find(e=>e[1]==='R'&&e[0]>=login):null;
   const late=fr?Math.max(0,fr[0]-shift):0;
   const o={name,login,shift,hasLogin:!!li,outEm:false,auto:sh==null,first:fr?fr[0]:null,late,lateV:late>LIM.grace,
-    rt:[],lo:{n:0,s:0},em:{n:0,s:0},brk:0,work:0,cna:0,out:null,outEarly:0,recv:{}};
+    lo:{n:0,s:0},em:{n:0,s:0},brk:0,work:0,cna:0,out:null,outEarly:0};
   ev.forEach((e,i)=>{
     if(e[1]==='O'){if(li&&e[0]<login)return;const nx=ev.slice(i+1).find(x=>x[1]==='I');
       if(!nx){o.out=e[0];if(/emergency/i.test(e[2])){o.em.n++;o.outEm=true}return}
       const g=nx[0]-e[0];if(g>LIM.emerg){const b=/emergency/i.test(e[2])?o.em:o.lo;b.n++;b.s+=g}}
-    else if(e[1]==='N'){if(/^break/i.test(e[2]))o.brk+=e[3];else if(/^work$/i.test(e[2]))o.work+=e[3];else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++}
-    else if(e[1]==='V'){o.recv[e[3]]=(o.recv[e[3]]||0)+1;if(e[3]<3)o.rt.push(hms(e[0])+' ('+e[3]+'s)')}});
+    else if(e[1]==='N'){if(/^break/i.test(e[2]))o.brk+=e[3];else if(/^work$/i.test(e[2]))o.work+=e[3];else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++}});
   if(li&&!o.outEm&&o.out!=null&&o.out<login+LIM.shift)o.outEarly=login+LIM.shift-o.out;
   o.brkV=o.brk>LIM.brk;o.workV=o.work>LIM.work;
   return o}
@@ -161,149 +159,3 @@ function viol(dt,o){
   if(o.workV)v.push({t:'work',l:'Work overrun',v:formatDuration(mn(o.work-LIM.work))+' over'});
   if(o.cna)v.push({t:'cna',l:'Call No Answer',v:o.cna+' call(s)'});
   if(o.outEarly)v.push({t:'early',l:'Early logout',v:formatDuration(mn(o.outEarly))+' short'});
-  return v}
-const TY=[['late','Late'],['logout','Logout'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['early','Early Logout']];
-
-function cell(dt,o,t,bad,txt,cls){
-  if(!bad)return`<td class="c ok">${txt}</td>`;
-  const x=exd(dt,o.name,t);
-  return`<td class="c ${x?'x':cls||'v'}" data-ex="${dt}|${o.name}|${t}">${txt}</td>`}
-
-function formatTimeOut(ts){
-  if(ts==null)return'—';
-  const sec=ts%86400, dayOffset=Math.floor(ts/86400), tStr=hms(sec);
-  return dayOffset>0?tStr+' (+1d)':tStr;
-}
-
-function dash(){
-  const q=(window.Q||'').toLowerCase();const names=Object.keys(S.days[date]||{}).sort().filter(n=>n.toLowerCase().includes(q));
-  if(!names.length)return`<div class="card"><div class="empty">No data for ${dmy(date||'—')}.</div></div>`;
-  const rs=names.map(n=>calc(date,n));let tv=0,ex=0;
-  rs.forEach(o=>viol(date,o).forEach(v=>exd(date,o.name,v.t)?ex++:tv++));
-  const ct=f=>rs.filter(o=>f(o)).length;
-  const body=rs.map(o=>{
-    return`<tr><td class="n">${o.name}</td>
-    <td>${o.hasLogin?`<input class="t" type="time" data-sh="${o.name}" value="${hms(o.shift).slice(0,5)}">`:'<span class="tag">Prev. day</span>'}</td>
-    <td>${o.hasLogin?hms(o.login):'Prev. day'}</td><td>${o.first!=null?hms(o.first):'—'}</td>
-    ${cell(date,o,'late',o.lateV,formatDuration(mn(o.late)))}
-    ${cell(date,o,'logout',o.lo.n,o.lo.n?o.lo.n+' / '+formatDuration(mn(o.lo.s)):'0')}
-    ${cell(date,o,'emerg',o.em.n,o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0')}
-    ${cell(date,o,'brk',o.brkV,formatDuration(mn(o.brk)))}
-    ${cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
-    ${cell(date,o,'cna',o.cna,o.cna)}
-    ${cell(date,o,'early',o.outEarly,formatTimeOut(o.out),'w')}<td class="c n">${rcnt(o)}</td><td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
-  EXP={n:'Daily_'+date,sh:[['Daily',[['Report Date',dmy(date)],['Agent','Shift start','Login','First ready','Late','Logouts','Logout time','Received','Excused'],...rs.map(o=>[o.name,o.hasLogin?hms(o.shift):'',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'',formatDuration(mn(o.late)),o.lo.n,formatTimeOut(o.out),rcnt(o),viol(date,o).filter(v=>exd(date,o.name,v.t)).map(v=>v.l).join('; ')])]]]};
-  return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
-  <div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
-  <div class="k"><b>${ct(o=>o.lateV)}</b><span>Late arrivals</span></div>
-  <div class="k"><b>${ct(o=>o.lo.n+o.em.n)}</b><span>Disconnections</span></div>
-  <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
-  <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((s,o)=>s+rcnt(o),0)}</b><span>Received</span></div></div>
-  <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First ready</th><th>Late</th><th>Logout (count/time)</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
-
-function monthly(){
-  const ds=Object.keys(S.days).filter(d=>d.startsWith(month)).sort();
-  if(!ds.length)return`<div class="card"><div class="empty">No data for this month.</div></div>`;
-  const A={},det=[];
-  ds.forEach(d=>Object.keys(S.days[d]).forEach(n=>{const o=calc(d,n);A[n]=A[n]||{};
-    viol(d,o).forEach(v=>{const x=exd(d,n,v.t);det.push({d,n,v,x});if(!x)A[n][v.t]=(A[n][v.t]||0)+(v.t==='cna'?o.cna:1)})}));
-  const names=Object.keys(A).sort();
-  const rows=names.map(n=>{const t=TY.reduce((s,y)=>s+(A[n][y[0]]||0),0);
-    return`<tr><td class="n">${n}</td>${TY.map(y=>`<td class="c ${A[n][y[0]]?'v':'ok'}">${A[n][y[0]]||0}</td>`).join('')}<td class="c n">${t}</td></tr>`}).join('');
-  det.sort((a,b)=>a.n.localeCompare(b.n)||a.d.localeCompare(b.d));
-  const dl=det.map(r=>`<tr><td class="n">${r.n}</td><td>${dmy(r.d)}</td><td>${r.v.l}</td><td>${r.v.v}</td>
-    <td class="c ${r.x?'x':'v'}" data-ex="${r.d}|${r.n}|${r.v.t}">${r.x?'Excused':'Cancel'}</td></tr>`).join('');
-  return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Monthly Report: ${month}</div>
-  <div class="card"><table><thead><tr><th>Employee</th>${TY.map(y=>`<th class="c">${y[1]}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>${rows||'<tr><td colspan=9 class="empty">No violations</td></tr>'}</tbody></table></div>
-  <h2>Incident log</h2><div class="card"><table><thead><tr><th>Employee</th><th>Date</th><th>Type</th><th>Detail</th></tr></thead><tbody>${dl}</tbody></table></div>`}
-
-function recv(){
-  const set=S.recv.split(',').map(x=>+x.trim()).filter(x=>x>0);
-  const cnt=(d,n)=>{const o=calc(d,n);return set.reduce((s,x)=>s+(o.recv[x]||0),0)};
-  const names=[...new Set(Object.keys(S.days).flatMap(d=>Object.keys(S.days[d])))].sort();
-  const rows=names.map(n=>{const a=S.days[date]&&S.days[date][n]?cnt(date,n):0;
-    return`<tr><td class="n">${n}</td><td class="c">${a}</td></tr>`}).join('');
-  return`<div class="bar"><label>Duration: <input id="rs" value="${S.recv}" style="width:90px"></label><button class="b p" id="rsb">Apply</button></div>
-  <div style="font-weight:700;margin-bottom:8px">📅 Date: ${dmy(date)}</div>
-  <div class="card"><table><thead><tr><th>Employee</th><th class="c">${dmy(date||'')}</th></tr></thead><tbody>${rows}</tbody></table></div>`
-}
-
-function adminPanel(){
-  if(USER_ROLE!=='admin')return`<div class="card"><div class="empty">Access Denied. Admins only.</div></div>`;
-  return`<div class="card pad" style="max-width:500px;margin:20px auto">
-    <h2>Create New User</h2>
-    <p class="hint">Create new accounts directly from the system.</p>
-    <div style="display:grid;gap:10px">
-      <input id="nu-em" type="email" placeholder="User Email">
-      <input id="nu-pw" type="password" placeholder="Password">
-      <select id="nu-role"><option value="editor">Editor</option><option value="admin">Admin</option></select>
-      <button class="b p" id="nu-btn">Create User</button>
-      <span id="nu-msg" style="font-size:12px;color:var(--grnt)"></span>
-    </div>
-  </div>`;
-}
-
-function data(){
-  const ds=Object.keys(S.idx).sort().reverse();
-  const rows=ds.map(d=>`<tr><td class="n">${dmy(d)}</td><td>${S.idx[d].a}</td><td>${esc(S.idx[d].f||'')}</td><td>${new Date(S.idx[d].t).toLocaleString()}</td><td><button class="b" data-del="${d}">Delete</button></td></tr>`).join('')||'<tr><td colspan=5 class="empty">No data</td></tr>';
-  return`<div class="bar"><input type="file" id="f" accept=".xlsx,.xls"><span class="tag">Import Report (xlsx)</span></div>
-  <div class="card"><table><thead><tr><th>Date</th><th>Agents</th><th>File</th><th>Imported</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
-}
-
-function logv(){return`<p class="hint">Audit trail</p><div class="card"><table style="min-width:600px"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th></tr></thead><tbody>${(LOGS||[]).map(x=>`<tr><td>${new Date(x.t).toLocaleString()}</td><td>${esc(x.n||'')}</td><td>${esc(x.a)}</td><td>${esc(x.d)}</td></tr>`).join('')||'<tr><td colspan=4 class="empty">No logs</td></tr>'}</tbody></table></div>`}
-
-let EXP=null;
-const rcnt=o=>(o.recv[1]||0)+(o.recv[2]||0);
-const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
-
-function copyBox(){const m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px';
-  m.innerHTML=`<div class="card" style="padding:20px;width:min(600px,100%)"><button class="b p" onclick="this.closest('div').parentElement.remove()">Close</button></div>`;
-  document.body.appendChild(m)}
-
-async function exportX(){if(!EXP)return;const wb=XLSX.utils.book_new();EXP.sh.forEach(s=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s[1]),s[0]));
-  try{XLSX.writeFile(wb,EXP.n+'.xlsx')}catch(e){copyBox()}}
-
-function render(){
-  let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['rec','Received'],['data','Data'],['log','Audit Log']];
-  if(USER_ROLE==='admin')navItems.push(['admin','Admin Panel']);
-  $('#nav').innerHTML=navItems.map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
-  const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
-  const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';loadMonth(lm).then(render);return}
-  if(tab==='log'&&LOGS===null){(async()=>{if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(200).get();LOGS=q.docs.map(x=>x.data())}catch(e){LOGS=[]}}else LOGS=[];render()})();return}
-  const bar=['dash','rec'].includes(tab)?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button>${tab==='dash'?`<input id="q" placeholder="Search..." value="${window.Q||''}">`:''}<button class="b p" data-exp="1" style="margin-left:auto">⬇ Export Excel</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"><button class="b p" data-exp="1">⬇ Export Excel</button></div>`:'';
-  $('#app').innerHTML=bar+({dash,mon:monthly,rec:recv,data,log:logv,admin:adminPanel}[tab])();
-  if(tab==='rec')month=date.slice(0,7)}
-
-document.addEventListener('click',e=>{const t=e.target;let x;
-  if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;render()}
-  else if(x=t.closest('[data-ex]')){const k=x.dataset.ex,on=!S.ex[k];if(on)S.ex[k]=1;else delete S.ex[k];persistMap('ex',k);render()}
-  else if(x=t.closest('[data-step]')){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+ +x.dataset.step);date=d.toISOString().slice(0,10);render()}
-  else if(x=t.closest('[data-del]')){if(confirm('Delete?'))delDay(x.dataset.del)}
-  else if(t.id==='nu-btn'){
-    (async()=>{
-      const em=$('#nu-em').value.trim(), pw=$('#nu-pw').value, role=$('#nu-role').value;
-      if(!em||!pw){alert('Enter email and password');return}
-      try{
-        const secApp=firebase.initializeApp(FB_CONFIG,"SecAppCreate");
-        const cred=await secApp.auth().createUserWithEmailAndPassword(em,pw);
-        await DB.doc('users/'+cred.user.uid).set({active:true, role:role});
-        await secApp.delete();
-        $('#nu-msg').textContent='User created successfully!';
-        $('#nu-em').value=''; $('#nu-pw').value='';
-      }catch(err){alert('Error: '+err.message)}
-    })();
-  }
-});
-document.addEventListener('change',e=>{const t=e.target;
-  if(t.id==='dt'&&t.value){date=t.value;month=date.slice(0,7);render()}
-  else if(t.id==='mo'&&t.value){month=t.value;render()}
-  else if(t.id==='f'&&t.files[0])importFile(t.files[0]);
-  else if(t.dataset.sh){const k=date+'|'+t.dataset.sh;S.shifts[k]=t.value;persistMap('sh',k);render()}
-  else if(t.id==='rs'){S.recv=t.value;render()}
-});
-render();
-document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))exportX();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
-document.addEventListener('input',e=>{if(e.target.id==='q'){window.Q=e.target.value;render()}});
-document.addEventListener('click',e=>{if(e.target.id==='so')firebase.auth().signOut()});
-boot();
-</script></body></html>
