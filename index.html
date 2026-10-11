@@ -38,7 +38,7 @@ header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px 
 <script>
 const LIM={grace:300,emerg:180,brk:43*60,work:300,cna:6,shift:8*3600};
 let S={days:{},idx:{},shifts:{},ex:{},recv:'1,2'},tab='dash',date='',month='';const FB_CONFIG={apiKey:"AIzaSyC5wAmajiFgKEAfi4Ay0ZA1QGL-KS4K9zo",authDomain:"performance-control-ab7f9.firebaseapp.com",projectId:"performance-control-ab7f9",storageBucket:"performance-control-ab7f9.firebasestorage.app",messagingSenderId:"599359001764",appId:"1:599359001764:web:8ae96947247d8036b60231"};
-let MEN='',DB=null,ME=null,LOADED={},LOGS=null,LOCALCOPY=null,USER_ROLE='editor';
+let MEN='',DB=null,ME=null,LOADED={},LOGS=null,USER_ROLE='editor';
 try{const r=localStorage.getItem('pcc_v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
 const save=()=>{if(DB)return;try{localStorage.setItem('pcc_v1',JSON.stringify(S))}catch(e){}};
 const $=q=>document.querySelector(q);
@@ -46,6 +46,13 @@ const pad=n=>String(n).padStart(2,'0');
 const hms=s=>pad(Math.floor(s/3600)%24)+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60);
 const dmy=d=>d.split('-').reverse().join('/');
 const mn=s=>Math.floor(s/60);
+const formatDuration=(mTotal)=>{
+  if(!mTotal||mTotal<=0)return'0 min';
+  const h=Math.floor(mTotal/60), m=mTotal%60;
+  if(h>0 && m>0) return h+' hr '+(h===1?'hour ':'hours ')+m+' min';
+  if(h>0) return h+' hr'+(h>1?'s':'');
+  return m+' min';
+};
 const tosec=h=>{const m=/^(\d+):(\d+)/.exec(h||'');return m?m[1]*3600+m[2]*60:null};
 const addDays=(dStr,n)=>{const d=new Date(dStr+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 
@@ -68,30 +75,16 @@ async function saveDay(d){
 async function saveIdx(){if(!DB){save();return}await DB.doc('meta/index').set({dates:S.idx})}
 function persistMap(c,k){if(!DB){save();return}const m=k.slice(0,7),src=c==='ex'?S.ex:S.shifts,sub={};
   Object.keys(src).filter(x=>x.startsWith(m)).forEach(x=>sub[x]=src[x]);DB.doc(c+'/'+m).set({m:sub}).catch(()=>{})}
-async function logA(a,d){const r={t:Date.now(),a,d};if(DB){try{await DB.collection('log').add(Object.assign({u:ME,n:MEN},r))}catch(e){}}}
 async function loadMonth(m){if(!DB||LOADED[m])return;
   try{const q=await DB.collection('days').where('month','==',m).get();q.docs.forEach(x=>{const v=x.data();S.days[v.date]=Object.assign(S.days[v.date]||{},typeof v.agents==='string'?JSON.parse(v.agents):v.agents)});
     for(const c of ['ex','sh']){const g=await DB.doc(c+'/'+m).get();if(g.exists)Object.assign(c==='ex'?S.ex:S.shifts,g.data().m||{})}}catch(e){}
   LOADED[m]=1}
 
 function showLogin(msg){let m=document.getElementById('lg');if(!m){m=document.createElement('div');m.id='lg';m.style.cssText='position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px';
-  m.innerHTML=`<div class="card" style="padding:28px;width:min(400px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:20px">Performance Control Center</h2><p class="hint">Sign in to continue</p><div style="display:grid;gap:10px"><input id="em" type="email" placeholder="Email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button class="b p" id="si">Sign in</button><div id="adm-box" style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px;display:none"><p style="font-size:12px;margin:0 0 6px;font-weight:600">Admin: Create new user</p><input id="nem" type="email" placeholder="New User Email" style="margin-bottom:6px;width:100%"><input id="npw" type="password" placeholder="New Password" style="margin-bottom:6px;width:100%"><select id="nrole" style="margin-bottom:6px;width:100%"><option value="editor">Editor</option><option value="admin">Admin</option></select><button class="b" id="nsub" style="width:100%">Create User</button></div><span id="le" style="color:var(--redt);font-size:12px"></span></div></div>`;
+  m.innerHTML=`<div class="card" style="padding:28px;width:min(400px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:20px">Performance Control Center</h2><p class="hint">Sign in to continue</p><div style="display:grid;gap:10px"><input id="em" type="email" placeholder="Email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button class="b p" id="si">Sign in</button><span id="le" style="color:var(--redt);font-size:12px"></span></div></div>`;
   document.body.appendChild(m);
   const go=async()=>{$('#le').textContent='';try{await firebase.auth().signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value)}catch(e){$('#le').textContent='Sign-in failed: '+(e.code||e.message)}};
-  $('#si').onclick=go;$('#pw').onkeydown=e=>{if(e.key==='Enter')go()};
-  $('#nsub').onclick=async()=>{
-    const ne=$('#nem').value.trim(),np=$('#npw').value,nr=$('#nrole').value;
-    if(!ne||!np){alert('Enter email and password');return}
-    try{
-      const secApp=firebase.initializeApp(FB_CONFIG,"SecApp");
-      const cred=await secApp.auth().createUserWithEmailAndPassword(ne,np);
-      const dbInstance=firebase.firestore();
-      await dbInstance.doc('users/'+cred.user.uid).set({active:true,role:nr});
-      await secApp.delete();
-      alert('User created successfully!');
-      $('#nem').value='';$('#npw').value='';
-    }catch(err){alert('Error: '+err.message)}
-  };}
+  $('#si').onclick=go;$('#pw').onkeydown=e=>{if(e.key==='Enter')go()}}
   if(msg)$('#le').textContent=msg}
 function hideLogin(){const m=document.getElementById('lg');if(m)m.remove()}
 
@@ -104,10 +97,9 @@ async function boot(){
     try{
       const uDoc=await DB.doc('users/'+ME).get();
       if(uDoc.exists)USER_ROLE=uDoc.data().role||'editor';
-      if(USER_ROLE==='admin'&&$('#adm-box')){$('#adm-box').style.display='block';}
       const g=await DB.doc('meta/index').get();S.idx=g.exists?(g.data().dates||{}):{}
     }catch(e){}
-    S.days={};S.ex={};S.shifts={};LOADED={};date='';month='';LOCALCOPY=null;
+    S.days={};S.ex={};S.shifts={};LOADED={};date='';month='';
     $('#st').textContent='\u25cf '+MEN;render()})}
 
 function importFile(f){
@@ -131,7 +123,6 @@ function importFile(f){
     await saveIdx();date=ds[ds.length-1];month=date.slice(0,7);tab='dash';render()})();
   };rd.readAsArrayBuffer(f)}
 
-/* Include current day and next day events for accurate logout */
 function getEvents(dt,name){
   let evs=(S.days[dt]&&S.days[dt][name])?[...S.days[dt][name]]:[];
   const nxt=addDays(dt,1);
@@ -164,13 +155,13 @@ const ek=(d,n,t)=>d+'|'+n+'|'+t;
 const exd=(d,n,t)=>!!S.ex[ek(d,n,t)];
 function viol(dt,o){
   const v=[];
-  if(o.lateV)v.push({t:'late',l:'Late arrival',v:mn(o.late)+' min'});
-  if(o.lo.n)v.push({t:'logout',l:'Logout ×'+o.lo.n,v:mn(o.lo.s)+' min'});
-  if(o.em.n)v.push({t:'emerg',l:'Emergency ×'+o.em.n,v:mn(o.em.s)+' min'});
-  if(o.brkV)v.push({t:'brk',l:'Break overrun',v:mn(o.brk-LIM.brk)+' min over'});
-  if(o.workV)v.push({t:'work',l:'Work overrun',v:mn(o.work-LIM.work)+' min over'});
+  if(o.lateV)v.push({t:'late',l:'Late arrival',v:formatDuration(mn(o.late))});
+  if(o.lo.n)v.push({t:'logout',l:'Logout ×'+o.lo.n,v:formatDuration(mn(o.lo.s))});
+  if(o.em.n)v.push({t:'emerg',l:'Emergency ×'+o.em.n,v:formatDuration(mn(o.em.s))});
+  if(o.brkV)v.push({t:'brk',l:'Break overrun',v:formatDuration(mn(o.brk-LIM.brk))+' over'});
+  if(o.workV)v.push({t:'work',l:'Work overrun',v:formatDuration(mn(o.work-LIM.work))+' over'});
   if(o.cna)v.push({t:'cna',l:'Call No Answer',v:o.cna+' call(s)'});
-  if(o.outEarly)v.push({t:'early',l:'Early logout',v:mn(o.outEarly)+' min short'});
+  if(o.outEarly)v.push({t:'early',l:'Early logout',v:formatDuration(mn(o.outEarly))+' short'});
   return v}
 const TY=[['late','Late'],['logout','Logout'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['early','Early Logout']];
 
@@ -191,25 +182,25 @@ function dash(){
   const rs=names.map(n=>calc(date,n));let tv=0,ex=0;
   rs.forEach(o=>viol(date,o).forEach(v=>exd(date,o.name,v.t)?ex++:tv++));
   const ct=f=>rs.filter(o=>f(o)).length;
-  const body=rs.map(o=>{const m=v=>v?mn(v):0;
+  const body=rs.map(o=>{
     return`<tr><td class="n">${o.name}</td>
     <td>${o.hasLogin?`<input class="t" type="time" data-sh="${o.name}" value="${hms(o.shift).slice(0,5)}">`:'<span class="tag">Prev. day</span>'}</td>
     <td>${o.hasLogin?hms(o.login):'Prev. day'}</td><td>${o.first!=null?hms(o.first):'—'}</td>
-    ${cell(date,o,'late',o.lateV,m(o.late)+' min')}
-    ${cell(date,o,'logout',o.lo.n,o.lo.n?o.lo.n+' / '+mn(o.lo.s)+' min':'0')}
-    ${cell(date,o,'emerg',o.em.n,o.em.n?o.em.n+' / '+mn(o.em.s)+' min':'0')}
-    ${cell(date,o,'brk',o.brkV,mn(o.brk)+' min')}
-    ${cell(date,o,'work',o.workV,mn(o.work)+' min')}
+    ${cell(date,o,'late',o.lateV,formatDuration(mn(o.late)))}
+    ${cell(date,o,'logout',o.lo.n,o.lo.n?o.lo.n+' / '+formatDuration(mn(o.lo.s)):'0')}
+    ${cell(date,o,'emerg',o.em.n,o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0')}
+    ${cell(date,o,'brk',o.brkV,formatDuration(mn(o.brk)))}
+    ${cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
     ${cell(date,o,'cna',o.cna,o.cna)}
     ${cell(date,o,'early',o.outEarly,formatTimeOut(o.out),'w')}<td class="c n">${rcnt(o)}</td><td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
-  EXP={n:'Daily_'+date,sh:[['Daily',[['Report Date',dmy(date)],['Agent','Shift start','Login','First ready','Late (min)','Logouts','Logout min','Emergency','Emergency min','Break (min)','Work (min)','Call no answer','Logout time','Received','Excused'],...rs.map(o=>[o.name,o.hasLogin?hms(o.shift):'',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'',o.lateV?mn(o.late):0,o.lo.n,mn(o.lo.s),o.em.n,mn(o.em.s),mn(o.brk),mn(o.work),o.cna,formatTimeOut(o.out),rcnt(o),viol(date,o).filter(v=>exd(date,o.name,v.t)).map(v=>v.l).join('; ')])]]]};
+  EXP={n:'Daily_'+date,sh:[['Daily',[['Report Date',dmy(date)],['Agent','Shift start','Login','First ready','Late','Logouts','Logout time','Received','Excused'],...rs.map(o=>[o.name,o.hasLogin?hms(o.shift):'',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'',formatDuration(mn(o.late)),o.lo.n,formatTimeOut(o.out),rcnt(o),viol(date,o).filter(v=>exd(date,o.name,v.t)).map(v=>v.l).join('; ')])]]]};
   return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
   <div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
   <div class="k"><b>${ct(o=>o.lateV)}</b><span>Late arrivals</span></div>
   <div class="k"><b>${ct(o=>o.lo.n+o.em.n)}</b><span>Disconnections</span></div>
   <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
   <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((s,o)=>s+rcnt(o),0)}</b><span>Received</span></div></div>
-  <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First ready</th><th>Late</th><th>Logout (count/min)</th><th>Emergency (count/min)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
+  <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First ready</th><th>Late</th><th>Logout (count/time)</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
 
 function monthly(){
   const ds=Object.keys(S.days).filter(d=>d.startsWith(month)).sort();
@@ -223,8 +214,6 @@ function monthly(){
   det.sort((a,b)=>a.n.localeCompare(b.n)||a.d.localeCompare(b.d));
   const dl=det.map(r=>`<tr><td class="n">${r.n}</td><td>${dmy(r.d)}</td><td>${r.v.l}</td><td>${r.v.v}</td>
     <td class="c ${r.x?'x':'v'}" data-ex="${r.d}|${r.n}|${r.v.t}">${r.x?'Excused':'Cancel'}</td></tr>`).join('');
-  const T=names.map(n=>[n,TY.reduce((s,y)=>s+(A[n][y[0]]||0),0)]).sort((a,b)=>b[1]-a[1]);const mx=Math.max(1,...T.map(x=>x[1]));
-  EXP={n:'Monthly_'+month,sh:[['Summary',[['Month',month],['Employee',...TY.map(y=>y[1]),'Total'],...names.map(n=>[n,...TY.map(y=>A[n][y[0]]||0),T.find(x=>x[0]===n)[1]])]]]};
   return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Monthly Report: ${month}</div>
   <div class="card"><table><thead><tr><th>Employee</th>${TY.map(y=>`<th class="c">${y[1]}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>${rows||'<tr><td colspan=9 class="empty">No violations</td></tr>'}</tbody></table></div>
   <h2>Incident log</h2><div class="card"><table><thead><tr><th>Employee</th><th>Date</th><th>Type</th><th>Detail</th></tr></thead><tbody>${dl}</tbody></table></div>`}
@@ -233,11 +222,26 @@ function recv(){
   const set=S.recv.split(',').map(x=>+x.trim()).filter(x=>x>0);
   const cnt=(d,n)=>{const o=calc(d,n);return set.reduce((s,x)=>s+(o.recv[x]||0),0)};
   const names=[...new Set(Object.keys(S.days).flatMap(d=>Object.keys(S.days[d])))].sort();
-  const rows=names.map(n=>{const a=S.days[date]&&S.days[date][n]?cnt(date,n):0;const m=0;
+  const rows=names.map(n=>{const a=S.days[date]&&S.days[date][n]?cnt(date,n):0;
     return`<tr><td class="n">${n}</td><td class="c">${a}</td></tr>`}).join('');
   return`<div class="bar"><label>Duration: <input id="rs" value="${S.recv}" style="width:90px"></label><button class="b p" id="rsb">Apply</button></div>
   <div style="font-weight:700;margin-bottom:8px">📅 Date: ${dmy(date)}</div>
   <div class="card"><table><thead><tr><th>Employee</th><th class="c">${dmy(date||'')}</th></tr></thead><tbody>${rows}</tbody></table></div>`
+}
+
+function adminPanel(){
+  if(USER_ROLE!=='admin')return`<div class="card"><div class="empty">Access Denied. Admins only.</div></div>`;
+  return`<div class="card pad" style="max-width:500px;margin:20px auto">
+    <h2>Create New User</h2>
+    <p class="hint">Create new accounts directly from the system.</p>
+    <div style="display:grid;gap:10px">
+      <input id="nu-em" type="email" placeholder="User Email">
+      <input id="nu-pw" type="password" placeholder="Password">
+      <select id="nu-role"><option value="editor">Editor</option><option value="admin">Admin</option></select>
+      <button class="b p" id="nu-btn">Create User</button>
+      <span id="nu-msg" style="font-size:12px;color:var(--grnt)"></span>
+    </div>
+  </div>`;
 }
 
 function data(){
@@ -261,12 +265,14 @@ async function exportX(){if(!EXP)return;const wb=XLSX.utils.book_new();EXP.sh.fo
   try{XLSX.writeFile(wb,EXP.n+'.xlsx')}catch(e){copyBox()}}
 
 function render(){
-  $('#nav').innerHTML=[['dash','Dashboard'],['mon','Monthly Report'],['rec','Received'],['data','Data'],['log','Audit Log']].map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
+  let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['rec','Received'],['data','Data'],['log','Audit Log']];
+  if(USER_ROLE==='admin')navItems.push(['admin','Admin Panel']);
+  $('#nav').innerHTML=navItems.map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
   const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
   const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';loadMonth(lm).then(render);return}
   if(tab==='log'&&LOGS===null){(async()=>{if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(200).get();LOGS=q.docs.map(x=>x.data())}catch(e){LOGS=[]}}else LOGS=[];render()})();return}
   const bar=['dash','rec'].includes(tab)?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button>${tab==='dash'?`<input id="q" placeholder="Search..." value="${window.Q||''}">`:''}<button class="b p" data-exp="1" style="margin-left:auto">⬇ Export Excel</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"><button class="b p" data-exp="1">⬇ Export Excel</button></div>`:'';
-  $('#app').innerHTML=bar+({dash,mon:monthly,rec:recv,data,log:logv}[tab])();
+  $('#app').innerHTML=bar+({dash,mon:monthly,rec:recv,data,log:logv,admin:adminPanel}[tab])();
   if(tab==='rec')month=date.slice(0,7)}
 
 document.addEventListener('click',e=>{const t=e.target;let x;
@@ -274,6 +280,20 @@ document.addEventListener('click',e=>{const t=e.target;let x;
   else if(x=t.closest('[data-ex]')){const k=x.dataset.ex,on=!S.ex[k];if(on)S.ex[k]=1;else delete S.ex[k];persistMap('ex',k);render()}
   else if(x=t.closest('[data-step]')){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+ +x.dataset.step);date=d.toISOString().slice(0,10);render()}
   else if(x=t.closest('[data-del]')){if(confirm('Delete?'))delDay(x.dataset.del)}
+  else if(t.id==='nu-btn'){
+    (async()=>{
+      const em=$('#nu-em').value.trim(), pw=$('#nu-pw').value, role=$('#nu-role').value;
+      if(!em||!pw){alert('Enter email and password');return}
+      try{
+        const secApp=firebase.initializeApp(FB_CONFIG,"SecAppCreate");
+        const cred=await secApp.auth().createUserWithEmailAndPassword(em,pw);
+        await DB.doc('users/'+cred.user.uid).set({active:true, role:role});
+        await secApp.delete();
+        $('#nu-msg').textContent='User created successfully!';
+        $('#nu-em').value=''; $('#nu-pw').value='';
+      }catch(err){alert('Error: '+err.message)}
+    })();
+  }
 });
 document.addEventListener('change',e=>{const t=e.target;
   if(t.id==='dt'&&t.value){date=t.value;month=date.slice(0,7);render()}
