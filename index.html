@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Performance Control Center</title>
+<title>Performance Contact Center</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -33,7 +33,7 @@ input.t{width:92px}h2{font-size:15px;margin:18px 0 8px}.tag{font-size:11px;color
 @media print{header,.bar,.hint{display:none}}
 header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px rgba(0,0,0,.25)}.k{border-top:3px solid var(--pri);box-shadow:0 1px 3px rgba(20,33,61,.06)}.k b{font-size:28px}th{position:sticky;top:0;z-index:1}td.n{position:sticky;left:0;background:var(--card)}tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(29,78,216,.06)}.chip{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}.chip.bad{background:var(--red);color:var(--redt)}.chip.good{background:var(--grn);color:var(--grnt)}.card.pad{padding:6px 18px 14px}.br{display:flex;align-items:center;gap:10px;margin:6px 0}.br i{display:block;height:10px;border-radius:6px;background:var(--pri)}.br span{width:170px;font-weight:600}.br em{font-style:normal;color:var(--mut)}#q{width:220px}
 </style></head><body>
-<header><h1>Performance Control Center<small>Agent attendance &amp; conduct monitoring</small></h1>
+<header><h1>Performance Contact Center<small>Agent attendance &amp; conduct monitoring</small></h1>
 <nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
 <main id="app"></main>
 <script>
@@ -81,7 +81,7 @@ async function loadMonth(m){if(!DB||LOADED[m])return;
   LOADED[m]=1}
 
 function showLogin(msg){let m=document.getElementById('lg');if(!m){m=document.createElement('div');m.id='lg';m.style.cssText='position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px';
-  m.innerHTML=`<div class="card" style="padding:28px;width:min(400px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:20px">Performance Control Center</h2><p class="hint">Sign in to continue</p><div style="display:grid;gap:10px"><input id="em" type="email" placeholder="Email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button class="b p" id="si">Sign in</button><span id="le" style="color:var(--redt);font-size:12px"></span></div></div>`;
+  m.innerHTML=`<div class="card" style="padding:28px;width:min(400px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:20px">Performance Contact Center</h2><p class="hint">Sign in to continue</p><div style="display:grid;gap:10px"><input id="em" type="email" placeholder="Email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button class="b p" id="si">Sign in</button><span id="le" style="color:var(--redt);font-size:12px"></span></div></div>`;
   document.body.appendChild(m);
   const go=async()=>{$('#le').textContent='';try{await firebase.auth().signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value)}catch(e){$('#le').textContent='Sign-in failed: '+(e.code||e.message)}};
   $('#si').onclick=go;$('#pw').onkeydown=e=>{if(e.key==='Enter')go()}}
@@ -254,7 +254,7 @@ async function exportX(){
   // Title Header
   sheet.mergeCells('A1:L1');
   const titleCell = sheet.getCell('A1');
-  titleCell.value = 'PERFORMANCE CONTROL CENTER - DAILY REPORT';
+  titleCell.value = 'PERFORMANCE CONTACT CENTER - DAILY REPORT';
   titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFF' } };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0F1C3F' } };
   titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
