@@ -49,8 +49,7 @@ const mn=s=>Math.floor(s/60);
 const formatDuration=(mTotal)=>{
   if(!mTotal||mTotal<=0)return'0 min';
   const h=Math.floor(mTotal/60), m=mTotal%60;
-  if(h>0 && m>0) return h+' hr '+(h===1?'hour ':'hours ')+m+' min';
-  if(h>0) return h+' hr'+(h>1?'s':'');
+  if(h>0) return h+':'+pad(m)+' min';
   return m+' min';
 };
 const tosec=h=>{const m=/^(\d+):(\d+)/.exec(h||'');return m?m[1]*3600+m[2]*60:null};
