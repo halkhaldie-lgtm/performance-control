@@ -212,7 +212,7 @@ function monthly(){
   det.sort((a,b)=>a.n.localeCompare(b.n)||a.d.localeCompare(b.d));
   const dl=det.map(r=>`<tr><td class="n">${r.n}</td><td>${dmy(r.d)}</td><td>${r.v.l}</td><td>${r.v.v}</td>
     <td class="c ${r.x?'x':'v'}" data-ex="${r.d}|${r.n}|${r.v.t}">${r.x?'Excused':'Cancel'}</td></tr>`).join('');
-  return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Monthly Report: ${month} <button class="b p" data-exp-month="1" style="float:right">⬇ Export Monthly Multi-Day Report</button></div>
+  return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Monthly Report: ${month}</div>
   <div class="card"><table><thead><tr><th>Employee</th>${TY.map(y=>`<th class="c">${y[1]}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>${rows||'<tr><td colspan=9 class="empty">No violations</td></tr>'}</tbody></table></div>
   <h2>Incident log</h2><div class="card"><table><thead><tr><th>Employee</th><th>Date</th><th>Type</th><th>Detail</th></tr></thead><tbody>${dl}</tbody></table></div>`}
 
@@ -238,12 +238,16 @@ function data(){
   <div class="card"><table><thead><tr><th>Date</th><th>Agents</th><th>File</th><th>Imported</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
 }
 
-function logv(){return`<p class="hint">Audit trail</p><div class="card"><table style="min-width:600px"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th></tr></thead><tbody>{(LOGS||[]).map(x=>`<tr><td>${new Date(x.t).toLocaleString()}</td><td>${esc(x.n||'')}</td><td>${esc(x.a)}</td><td>${esc(x.d)}</td></tr>`).join('')||'<tr><td colspan=4 class="empty">No logs</td></tr>'}</tbody></table></div>`}
+function logv(){
+  const items = LOGS || [];
+  const rows = items.map(x => `<tr><td>${new Date(x.t).toLocaleString()}</td><td>${esc(x.n||'')}</td><td>${esc(x.a)}</td><td>${esc(x.d)}</td></tr>`).join('') || '<tr><td colspan=4 class="empty">No logs</td></tr>';
+  return `<p class="hint">Audit trail</p><div class="card"><table style="min-width:600px"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
 
 const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
 const nvForDate=(dt,o)=>viol(dt,o).filter(v=>!exd(dt,o.name,v.t)).length;
 
-/* Single Day Export */
+/* Professional Colored Excel Export */
 async function exportX(){
   if(!date) return;
   const names=Object.keys(S.days[date]||{}).sort();
@@ -340,103 +344,6 @@ async function exportX(){
   window.URL.revokeObjectURL(url);
 }
 
-/* Stable Monthly Multi-Day Export with Date Column and Excel Filter */
-async function exportMonthX(){
-  const ds = Object.keys(S.days).filter(d => d.startsWith(month)).sort();
-  if(!ds.length){ alert("No data for this month"); return; }
-
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('Monthly Report - ' + month);
-
-  sheet.mergeCells('A1:M1');
-  const titleCell = sheet.getCell('A1');
-  titleCell.value = 'PERFORMANCE CONTACT CENTER - MONTHLY REPORT (' + month + ')';
-  titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFF' } };
-  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0F1C3F' } };
-  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-  sheet.getRow(1).height = 30;
-
-  sheet.addRow([]);
-
-  const headers = ['Report Date', 'Agent Name', 'Shift Start', 'Login Time', 'First Ready', 'Late Arrival', 'Logouts', 'Emergency', 'Break Total', 'Work Total', 'Call No Ans', 'Logout Time', 'Status'];
-  const headerRow = sheet.addRow(headers);
-  headerRow.height = 25;
-  
-  headerRow.eachCell((cell) => {
-    cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFF' } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E3A8A' } };
-    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'medium'}, right: {style:'thin'} };
-  });
-
-  sheet.autoFilter = {
-    from: { row: 3, column: 1 },
-    to: { row: 3, column: headers.length }
-  };
-
-  ds.forEach(d => {
-    const names = Object.keys(S.days[d]||{}).sort();
-    names.forEach(n => {
-      const o = calc(d, n);
-      const rowValues = [
-        dmy(d),
-        o.name,
-        o.hasLogin ? hms(o.shift) : 'Prev. day',
-        o.hasLogin ? hms(o.login) : 'Prev. day',
-        o.first != null ? hms(o.first) : '—',
-        o.lateV ? formatDuration(mn(o.late)) : '0 min',
-        o.lo.n ? (o.lo.n + ' / ' + formatDuration(mn(o.lo.s))) : '0',
-        o.em.n ? (o.em.n + ' / ' + formatDuration(mn(o.em.s))) : '0',
-        formatDuration(mn(o.brk)),
-        formatDuration(mn(o.work)),
-        o.cna,
-        formatTimeOut(o.out),
-        nvForDate(d, o) ? (nvForDate(d, o) + ' open') : 'Clean'
-      ];
-
-      const row = sheet.addRow(rowValues);
-      row.height = 20;
-
-      row.eachCell((cell, colNum) => {
-        cell.font = { name: 'Segoe UI', size: 10 };
-        cell.alignment = { vertical: 'middle', horizontal: colNum === 2 ? 'left' : 'center' };
-        cell.border = { top: {style:'thin', color:{argb:'E1E6EF'}}, left: {style:'thin', color:{argb:'E1E6EF'}}, bottom: {style:'thin', color:{argb:'E1E6EF'}}, right: {style:'thin', color:{argb:'E1E6EF'}} };
-      });
-
-      const redFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FDE8E8' } };
-      const redFont = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'B91C1C' } };
-
-      if (o.lateV && !exd(d, o.name, 'late')) { row.getCell(6).fill = redFill; row.getCell(6).font = redFont; }
-      if (o.lo.n && !exd(d, o.name, 'logout')) { row.getCell(7).fill = redFill; row.getCell(7).font = redFont; }
-      if (o.em.n && !exd(d, o.name, 'emerg')) { row.getCell(8).fill = redFill; row.getCell(8).font = redFont; }
-      if (o.brkV && !exd(d, o.name, 'brk')) { row.getCell(9).fill = redFill; row.getCell(9).font = redFont; }
-      if (o.workV && !exd(d, o.name, 'work')) { row.getCell(10).fill = redFill; row.getCell(10).font = redFont; }
-      if (o.cna && !exd(d, o.name, 'cna')) { row.getCell(11).fill = redFill; row.getCell(11).font = redFont; }
-      
-      if (nvForDate(d, o)) { row.getCell(13).fill = redFill; row.getCell(13).font = redFont; }
-      else { row.getCell(13).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: '15803D' } }; }
-    });
-  });
-
-  sheet.columns.forEach(column => {
-    let maxLength = 12;
-    column.eachCell({ includeEmpty: false }, cell => {
-      const columnLength = cell.value ? cell.value.toString().length : 10;
-      if (columnLength > maxLength) maxLength = columnLength;
-    });
-    column.width = maxLength + 4;
-  });
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = window.URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = 'Monthly_Performance_Report_' + month + '.xlsx';
-  anchor.click();
-  window.URL.revokeObjectURL(url);
-}
-
 function render(){
   let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log']];
   if(USER_ROLE==='admin')navItems.push(['admin','Admin Panel']);
@@ -444,7 +351,7 @@ function render(){
   const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
   const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';loadMonth(lm).then(render);return}
   if(tab==='log'&&LOGS===null){(async()=>{if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(200).get();LOGS=q.docs.map(x=>x.data())}catch(e){LOGS=[]}}else LOGS=[];render()})();return}
-  const bar=tab==='dash'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button><input id="q" placeholder="Search..." value="${window.Q||''}"><div style="margin-left:auto;display:flex;gap:8px"><button class="b" data-exp="1">⬇ Export Selected Day</button><button class="b p" data-exp-month="1">⬇ Export Full Month Report</button></div></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"></div>`:'';
+  const bar=tab==='dash'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button><input id="q" placeholder="Search..." value="${window.Q||''}"><button class="b p" data-exp="1" style="margin-left:auto">⬇ Export Excel</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"></div>`:'';
   $('#app').innerHTML=bar+({dash,mon:monthly,data,log:logv,admin:adminPanel}[tab])();
 }
 
@@ -475,7 +382,7 @@ document.addEventListener('change',e=>{const t=e.target;
   else if(t.dataset.sh){const k=date+'|'+t.dataset.sh;S.shifts[k]=t.value;persistMap('sh',k);render()}
 });
 render();
-document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))exportX();if(e.target.closest('[data-exp-month]'))exportMonthX();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
+document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))exportX();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
 document.addEventListener('input',e=>{if(e.target.id==='q'){window.Q=e.target.value;render()}});
 document.addEventListener('click',e=>{if(e.target.id==='so')firebase.auth().signOut()});
 boot();
