@@ -462,4 +462,57 @@ function render(){
   let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log']];
   if(USER_ROLE==='admin')navItems.push(['admin','Admin Panel']);
   $('#nav').innerHTML=navItems.map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
-  const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.
+  const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
+  const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';Promise.all(adj(lm).map(loadMonth)).then(render);return}
+  if(tab==='log'&&LOGS===null){(async()=>{if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(200).get();LOGS=q.docs.map(x=>x.data())}catch(e){LOGS=[]}}else LOGS=[];render()})();return}
+  const bar=tab==='dash'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button><input id="q" placeholder="Search..." value="${window.Q||''}"><button class="b p" data-exp="1" style="margin-left:auto">⬇ Download report</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"></div>`:'';
+  $('#app').innerHTML=bar+({dash,mon:monthly,data,log:logv,admin:adminPanel}[tab])();
+}
+
+document.addEventListener('click',e=>{const t=e.target;let x;
+  if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;render()}
+  else if(x=t.closest('[data-ex]')){openNote(x.dataset.ex)}
+  else if(x=t.closest('[data-step]')){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+ +x.dataset.step);date=d.toISOString().slice(0,10);render()}
+  else if(x=t.closest('[data-del]')){if(confirm('Delete?'))delDay(x.dataset.del)}
+  else if(t.id==='nu-btn'){
+    (async()=>{
+      const em=$('#nu-em').value.trim(), pw=$('#nu-pw').value, role=$('#nu-role').value;
+      if(!em||!pw){alert('Enter email and password');return}
+      try{
+        const secApp=firebase.initializeApp(FB_CONFIG,"SecAppCreate");
+        const cred=await secApp.auth().createUserWithEmailAndPassword(em,pw);
+        await DB.doc('users/'+cred.user.uid).set({email:em,active:true,role:role,created:Date.now(),by:MEN});
+        await secApp.delete();logA('Create user',em+' · '+role);
+        $('#nu-msg').textContent='User created successfully!';
+        $('#nu-em').value=''; $('#nu-pw').value='';
+      }catch(err){alert('Error: '+err.message)}
+    })();
+  }
+});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.id==='dt'&&t.value){date=t.value;month=date.slice(0,7);render()}
+  else if(t.id==='mo'&&t.value){month=t.value;render()}
+  else if(t.id==='f'&&t.files[0])importFile(t.files[0]);
+  else if(t.dataset.sh){const k=date+'|'+t.dataset.sh;S.shifts[k]=t.value;persistMap('sh',k);logA('Shift start',dmy(date)+' · '+t.dataset.sh+' = '+t.value);render()}
+  else if(t.id==='agent-select'){window.MONTH_SELECTED_AGENT=t.value;render()}
+});
+render();
+document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))openExport();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){window.Q=e.target.value;const p=e.target.selectionStart;render();const q=$('#q');if(q){q.focus();q.setSelectionRange(p,p)}}});
+document.addEventListener('click',e=>{if(e.target.id==='so')firebase.auth().signOut()});
+document.addEventListener('click',async e=>{const id=e.target.id;
+  if(id==='xc'||id==='mdl'){const m=document.getElementById('mdl');if(m)m.remove();return}
+  if(id==='nx1'){saveNote(true);return}
+  if(id==='nx0'||id==='nxs'){saveNote(false);return}
+  if(id==='addday'){WANT=date;pickFile();return}
+  if(id==='x1'||id==='x2'){const msg=$('#xm'),btn=e.target;btn.disabled=true;msg.textContent='Preparing\u2026';
+    try{let dates;
+      if(id==='x1')dates=[date];
+      else{const f=$('#xf').value,t=$('#xt').value;if(!f||!t||f>t)throw new Error('choose a valid period');
+        dates=[];for(let d=f;d<=t&&dates.length<=366;d=addDays(d,1))dates.push(d);if(dates.length>366)throw new Error('maximum period is 366 days')}
+      await exportReport(dates,id==='x1'?'day':'period');msg.textContent='Done \u2713'}
+    catch(err){msg.textContent='Failed: '+err.message}
+    btn.disabled=false}});
+
+boot();
+</script></body></html>
