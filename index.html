@@ -21,8 +21,8 @@ main{max-width:1500px;margin:0 auto;padding:20px 24px}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
 input,select,button.b{font:inherit;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)}
 button.b{cursor:pointer;font-weight:600}button.p{background:var(--pri);color:#fff;border-color:var(--pri)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
-.k{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px 16px}.k b{font-size:16px;display:block;margin-bottom:6px}.k span{color:var(--mut);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.k{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.k b{font-size:14px;display:block;margin-bottom:4px}.k span{color:var(--mut);font-size:12px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow-x:auto;margin-bottom:16px}
 table{border-collapse:collapse;width:100%;min-width:980px}th{background:var(--bg);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);padding:10px;white-space:nowrap}
 td{padding:9px 10px;border-top:1px solid var(--bd);white-space:nowrap}td.n{font-weight:600}
@@ -31,7 +31,7 @@ td{padding:9px 10px;border-top:1px solid var(--bd);white-space:nowrap}td.n{font-
 td.c{text-align:center}.hint{color:var(--mut);font-size:12px;margin:0 0 12px}.empty{padding:40px;text-align:center;color:var(--mut)}
 input.t{width:92px}h2{font-size:15px;margin:18px 0 8px}.tag{font-size:11px;color:var(--mut)}
 @media print{header,.bar,.hint{display:none}}
-header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px rgba(0,0,0,.25)}.k{border-top:3px solid var(--pri);box-shadow:0 1px 3px rgba(20,33,61,.06)}th{position:sticky;top:0;z-index:1}td.n{position:sticky;left:0;background:var(--card)}tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(29,78,216,.06)}.chip{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}.chip.bad{background:var(--red);color:var(--redt)}.chip.good{background:var(--grn);color:var(--grnt)}.card.pad{padding:12px 18px 16px}
+header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px rgba(0,0,0,.25)}.k{border-top:3px solid var(--pri)}.k.good{border-top-color:var(--grnt)}.k.bad{border-top-color:var(--redt)}th{position:sticky;top:0;z-index:1}td.n{position:sticky;left:0;background:var(--card)}tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(29,78,216,.06)}.chip{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}.chip.bad{background:var(--red);color:var(--redt)}.chip.good{background:var(--grn);color:var(--grnt)}.card.pad{padding:12px 18px 16px}
 </style></head><body>
 <header><h1>Performance Contact Center<small>Agent attendance &amp; conduct monitoring</small></h1>
 <nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
@@ -128,7 +128,7 @@ function importFile(f){
 
 let WANT=null;
 const exOn=v=>v===1||!!(v&&v.e===1);
-const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer',early:'Early logout'};
+const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer'};
 function openNote(k){
   const [d,n,t]=k.split('|'),cur=S.ex[k],on=exOn(cur),note=(cur&&cur.n)||'';
   const m=document.createElement('div');m.id='mdl';m.dataset.k=k;m.style.cssText=MS;
@@ -169,16 +169,16 @@ function calc(dt,name){
   const li=ev.find(e=>e[1]==='I');const login=li?li[0]:(ev[0]?ev[0][0]:0);
   const auto=Math.round(login/3600)*3600;const sh=tosec(S.shifts[dt+'|'+name]);const shift=sh==null?auto:sh;
   const fr=li?ev.find(e=>e[1]==='R'&&e[0]>=login):null;
-  const late=fr?Math.max(0,fr[0]-shift):0;
-  const o={name,login,shift,hasLogin:!!li,outEm:false,auto:sh==null,first:fr?fr[0]:null,late,lateV:late>LIM.grace,
-    em:{n:0,s:0},brk:0,work:0,cna:0,out:null,outEarly:0,recv:{},rt:[]};
+  const targetCheckTime = fr ? fr[0] : login;
+  const late=targetCheckTime>0?Math.max(0,targetCheckTime-shift):0;
+  const o={name,login,shift,hasLogin:!!li,auto:sh==null,first:targetCheckTime,late,lateV:late>LIM.grace,
+    em:{n:0,s:0},brk:0,work:0,cna:0,out:null,recv:{},rt:[]};
   ev.forEach((e,i)=>{
     if(e[1]==='O'){if(li&&e[0]<login)return;const nx=ev.slice(i+1).find(x=>x[1]==='I');
-      if(!nx){o.out=e[0];if(/emergency/i.test(e[2])){o.em.n++;o.outEm=true}return}
+      if(!nx){o.out=e[0];if(/emergency/i.test(e[2])){o.em.n++;}return}
       const g=nx[0]-e[0];if(g>LIM.emerg&&/emergency/i.test(e[2])){o.em.n++;o.em.s+=g}}
     else if(e[1]==='N'){if(/^break/i.test(e[2]))o.brk+=e[3];else if(/^work$/i.test(e[2]))o.work+=e[3];else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++}});
   rawEv(dt,name).forEach(e=>{if(e[1]==='V'){o.recv[e[3]]=(o.recv[e[3]]||0)+1;if(e[3]<3)o.rt.push(hms(e[0])+' ('+e[3]+'s)')}});
-  if(li&&!o.outEm&&o.out!=null&&o.out<login+LIM.shift)o.outEarly=login+LIM.shift-o.out;
   o.brkV=o.brk>LIM.brk;o.workV=o.work>LIM.work;
   return o}
 
@@ -191,9 +191,8 @@ function viol(dt,o){
   if(o.brkV)v.push({t:'brk',l:'Break overrun',v:formatDuration(mn(o.brk-LIM.brk))+' over'});
   if(o.workV)v.push({t:'work',l:'Work overrun',v:formatDuration(mn(o.work-LIM.work))+' over'});
   if(o.cna)v.push({t:'cna',l:'Call No Answer',v:o.cna+' call(s)'});
-  if(o.outEarly)v.push({t:'early',l:'Early logout',v:formatDuration(mn(o.outEarly))+' short'});
   return v}
-const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['early','Early Logout']];
+const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer']];
 
 function cell(dt,o,t,bad,txt,cls){
   if(!bad)return`<td class="c ok">${txt}</td>`;
@@ -221,7 +220,7 @@ function dash(){
     ${cell(date,o,'brk',o.brkV,formatDuration(mn(o.brk)))}
     ${cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
     ${cell(date,o,'cna',o.cna,o.cna)}
-    ${cell(date,o,'early',o.outEarly,formatTimeOut(o.out),'w')}<td class="c n" title="${o.rt.join(', ')}">${rcnt(o)}</td><td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
+    <td>${formatTimeOut(o.out)}</td><td class="c n" title="${o.rt.join(', ')}">${rcnt(o)}</td><td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
   return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
   <div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
@@ -229,7 +228,7 @@ function dash(){
   <div class="k"><b>${ct(o=>o.em.n)}</b><span>Emergency</span></div>
   <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
   <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((a,o)=>a+rcnt(o),0)}</b><span>Received (1,2 sec)</span></div></div>
-  <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First ready</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
+  <div class="card"><table><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First active</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
 
 function monthly(){
   const ds=Object.keys(S.days).filter(d=>d.startsWith(month)).sort();
@@ -240,9 +239,10 @@ function monthly(){
     const o=calc(d,n);
     viol(d,o).forEach(v=>{
       if(!exd(d,n,v.t)){
-        A[n]=A[n]||{total:0,types:{}};
+        A[n]=A[n]||{total:0,types:{late:0,brk:0,work:0,cna:0,emerg:0},rawTypes:{}};
         const count=(v.t==='cna'?o.cna:1);
         A[n].total+=count;
+        A[n].rawTypes[v.t]=(A[n].rawTypes[v.t]||0)+count;
         A[n].types[v.l]=(A[n].types[v.l]||0)+count;
         dList[n]=dList[n]||[];
         dList[n].push({date:dmy(d),type:v.l,detail:v.v});
@@ -250,21 +250,29 @@ function monthly(){
     })
   }));
   
-  const sortedAgents=Array.from(allAgents).map(n=>({name:n,total:(A[n]?A[n].total:0),types:A[n]?A[n].types:{}}));
-  const cleanAgents=sortedAgents.filter(a=>a.total===0);
-  const violators=sortedAgents.filter(a=>a.total>0).sort((a,b)=>b.total-a.total);
-  const top3Clean=cleanAgents.slice(0,3);
-  const top3Worst=violators.slice(0,3);
+  const sortedAgents=Array.from(allAgents).map(n=>({
+    name:n,
+    total:(A[n]?A[n].total:0),
+    types:A[n]?A[n].types:{},
+    raw:A[n]?A[n].rawTypes:{}
+  })).sort((a,b)=>a.total-b.total);
 
-  const cleanCardHtml=top3Clean.length?top3Clean.map(a=>`⭐ <b>${esc(a.name)}</b>`).join('<br>'):'<span class="tag">None this month</span>';
-  const worstCardHtml=top3Worst.length?top3Worst.map(a=>{
-    const details=Object.keys(a.types).map(k=>`${k}: ${a.types[k]}`).join(' | ');
-    return `⚠️ <b>${esc(a.name)}</b> <span class="tag">(${a.total} violations)</span><br><span style="font-size:11px;color:var(--redt)">${details}</span>`;
-  }).join('<hr style="border:0;border-top:1px solid var(--bd);margin:6px 0">'):'<span class="chip good">Zero violations!</span>';
+  const top3Best=sortedAgents.slice(0,3);
+  const top3Worst=sortedAgents.slice().sort((a,b)=>b.total-a.total).slice(0,3);
+
+  const bestHtml=top3Best.length?top3Best.map(a=>`⭐ <b>${esc(a.name)}</b> <span class="tag">(${a.total} violations)</span>`).join('<br>'):'<span class="tag">No agents</span>';
+  const worstHtml=top3Worst.length?top3Worst.map(a=>`⚠️ <b>${esc(a.name)}</b> <span class="tag" style="color:var(--redt)">(${a.total} violations)</span>`).join('<br>'):'<span class="tag">No agents</span>';
 
   const rows=sortedAgents.map(a=>{
-    const details=Object.keys(a.types).map(k=>`${k} (${a.types[k]})`).join(', ')||'None';
-    return `<tr><td class="n">${esc(a.name)}</td><td>${details}</td><td class="c n ${a.total>0?'v':'ok'}">${a.total}</td></tr>`;
+    return `<tr>
+      <td class="n">${esc(a.name)}</td>
+      <td class="c">${a.raw.late||0}</td>
+      <td class="c">${a.raw.brk||0}</td>
+      <td class="c">${a.raw.cna||0}</td>
+      <td class="c">${a.raw.work||0}</td>
+      <td class="c">${a.raw.emerg||0}</td>
+      <td class="c n ${a.total>0?'v':'ok'}">${a.total}</td>
+    </tr>`;
   }).join('');
 
   const selectedAgent=window.MONTH_SELECTED_AGENT||(sortedAgents[0]?sortedAgents[0].name:'');
@@ -275,17 +283,17 @@ function monthly(){
 
   return`
   <div class="bar"><input type="month" id="mo" value="${month}"></div>
-  <div class="kpis">
-    <div class="k"><b style="color:var(--grnt)">⭐ Top 3 Clean Agents</b><span>${cleanCardHtml}</span></div>
-    <div class="k"><b style="color:var(--redt)">⚠️ Top 3 Violators (Unexcused)</b><span>${worstCardHtml}</span></div>
+  <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+    <div class="k good"><b style="color:var(--grnt)">⭐ Top 3 Best (Least Violations)</b><span style="font-size:12px;line-height:1.6">${bestHtml}</span></div>
+    <div class="k bad"><b style="color:var(--redt)">⚠️ Top 3 Worst (Most Violations)</b><span style="font-size:12px;line-height:1.6">${worstHtml}</span></div>
   </div>
   
   <h2>Monthly Summary (Unexcused Violations Only)</h2>
-  <div class="card"><table><thead><tr><th>Employee</th><th>Violation Breakdown</th><th class="c">Total Real Violations</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="card"><table><thead><tr><th>Employee</th><th class="c">Late Count</th><th class="c">Break Overrun Count</th><th class="c">CNA Count</th><th class="c">Work Overrun Count</th><th class="c">Emergency Count</th><th class="c">Total Real Violations</th></tr></thead><tbody>${rows}</tbody></table></div>
   
   <h2>🔍 Agent Daily Incident Lookup</h2>
   <div class="card pad" style="max-width:800px">
-    <p class="hint">Select an agent to inspect the precise dates of their unexcused violations:</p>
+    <p class="hint">Select an agent to inspect the precise dates and times of their unexcused violations:</p>
     <div class="bar" style="margin-bottom:12px"><label style="font-weight:650">Select Agent: <select id="agent-select" style="margin-left:8px">${dropdownOpts}</select></label></div>
     <table><thead><tr><th>Date</th><th>Violation Type</th><th>Detail</th></tr></thead><tbody>${detailRows}</tbody></table>
   </div>`;
@@ -323,7 +331,7 @@ const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
 const nvForDate=(dt,o)=>viol(dt,o).filter(v=>!exd(dt,o.name,v.t)).length;
 
 const EC={navy:'FF0F1C3F',hd:'FF1E3A8A',pri:'FF1D4ED8',red:'FFFDE8E8',redt:'FFB91C1C',amb:'FFFFF4D6',ambt:'FF92400E',grn:'FFE3F6EA',grnt:'FF15803D',bd:'FFE1E6EF',wh:'FFFFFFFF',mut:'FF6B7791'};
-const RH=['Agent Name','Shift Start','Login Time','First Ready','Late Arrival','Emergency','Break Total','Work Total','Call No Ans','Logout Time','Received','Status'];
+const RH=['Agent Name','Shift Start','Login Time','First Active','Late Arrival','Emergency','Break Total','Work Total','Call No Ans','Logout Time','Received','Status'];
 const RW=[26,12,12,12,13,15,13,13,12,16,11,12];
 const EF=(o)=>Object.assign({name:'Segoe UI',size:10},o||{});
 const fillOf=c=>({type:'pattern',pattern:'solid',fgColor:{argb:c},bgColor:{argb:c}});
@@ -335,7 +343,7 @@ function repRow(d,o){
   return{d,vals:[o.name,o.hasLogin?hms(o.shift):'Prev. day',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'\u2014',
     formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',
     formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,formatTimeOut(o.out),rcnt(o),n?n+' open':'Clean'],
-    fl:[f(o.lateV,'late'),f(o.em.n,'emerg'),f(o.brkV,'brk'),f(o.workV,'work'),f(o.cna,'cna'),f(o.outEarly,'early')]}}
+    fl:[f(o.lateV,'late'),f(o.em.n,'emerg'),f(o.brkV,'brk'),f(o.workV,'work'),f(o.cna,'cna')]}}
 
 async function collectRows(dates){
   const ms=new Set();[addDays(dates[0],-1),...dates,addDays(dates[dates.length-1],1)].forEach(d=>ms.add(d.slice(0,7)));
@@ -345,8 +353,8 @@ async function collectRows(dates){
 
 function styleBody(cell,c,fl){
   cell.font=EF();cell.alignment={vertical:'middle',horizontal:c===1?'left':'center'};cell.border=BORD();
-  if(c>=5&&c<=10){const v=fl[c-5];
-    if(v===1){cell.fill=fillOf(c===10?EC.amb:EC.red);cell.font=EF({bold:true,color:{argb:c===10?EC.ambt:EC.redt}})}
+  if(c>=5&&c<=9){const v=fl[c-5];
+    if(v===1){cell.fill=fillOf(EC.red);cell.font=EF({bold:true,color:{argb:EC.redt}})}
     else if(v===2){cell.fill=fillOf(EC.grn);cell.font=EF({color:{argb:EC.grnt},strike:true})}}
   if(c===12){const s=String(cell.value);cell.font=EF({bold:true,color:{argb:s==='Clean'?EC.grnt:EC.redt}});cell.fill=fillOf(s==='Clean'?EC.grn:EC.red)}}
 
@@ -384,34 +392,34 @@ async function exportReport(dates,mode){
     const ls=wb.addWorksheet('Lists');ls.getColumn(1).numFmt='@';ls.getColumn(1).width=14;ls.getCell('A1').value='Dates';ls.getCell('A1').font=EF({bold:true});
     dates.forEach((d,i)=>{ls.getCell(i+2,1).value=dmy(d)});
     const ds=wb.addWorksheet('Data');
-    const DH=['Date','Agent Name','Shift Start','Login Time','First Ready','Late Arrival','Emergency','Break Total','Work Total','Call No Ans','Logout Time','Received','Status','Flag Late','Flag Emerg','Flag Break','Flag Work','Flag CNA','Flag Early','Match','Pos'];
+    const DH=['Date','Agent Name','Shift Start','Login Time','First Active','Late Arrival','Emergency','Break Total','Work Total','Call No Ans','Logout Time','Received','Status','Flag Late','Flag Emerg','Flag Break','Flag Work','Flag CNA','Match','Pos'];
     DH.forEach((h,i)=>{const c=ds.getCell(1,i+1);c.value=h;c.font=EF({bold:true,color:{argb:EC.wh}});c.fill=fillOf(i<13?EC.hd:EC.mut);c.alignment={horizontal:'center',vertical:'middle',wrapText:true}});
-    ds.getColumn(1).numFmt='@';ds.getColumn(1).width=13;ds.getColumn(2).width=26;for(let i=3;i<=19;i++)ds.getColumn(i).width=13;
-    ds.getColumn(20).hidden=true;ds.getColumn(21).hidden=true;ds.views=[{state:'frozen',ySplit:1}];
+    ds.getColumn(1).numFmt='@';ds.getColumn(1).width=13;ds.getColumn(2).width=26;for(let i=3;i<=18;i++)ds.getColumn(i).width=13;
+    ds.getColumn(19).hidden=true;ds.getColumn(20).hidden=true;ds.views=[{state:'frozen',ySplit:1}];
     rows.forEach((r,i)=>{const row=ds.getRow(2+i);row.getCell(1).value=dmy(r.d);r.vals.forEach((v,k)=>{row.getCell(2+k).value=v});r.fl.forEach((v,k)=>{row.getCell(14+k).value=v})});
     for(let r=2;r<=LAST;r++){
       const m='AND($A'+r+'<>"",TRIM($A'+r+')=TRIM(Report!$B$2))';
-      ds.getCell(r,20).value={formula:'IF('+m+',1,0)+N(T'+(r-1)+')'};
-      ds.getCell(r,21).value={formula:'IF('+m+',T'+r+',"")'}}
+      ds.getCell(r,19).value={formula:'IF('+m+',1,0)+N(S'+(r-1)+')'};
+      ds.getCell(r,20).value={formula:'IF('+m+',S'+r+',"")'}}
     const first=dates.includes(date)&&S.days[date]?date:(dates.find(d=>S.days[d])||dates[0]);
     pick.value=dmy(first);
     pick.dataValidation={type:'list',allowBlank:false,showErrorMessage:true,errorTitle:'Invalid date',error:'Choose a date from the list.',formulae:['Lists!$A$2:$A$'+(dates.length+1)]};
     const hint=ws.getCell('C2');hint.value='\u25c0 choose a date from the list \u2014 the table shows only that date';hint.font=EF({italic:true,color:{argb:EC.mut}});
-    kpiCells(ws,[{formula:'COUNT('+rg('U')+')'},{formula:'SUMPRODUCT(--ISNUMBER('+rg('U')+'),--('+rg('N')+'=1))'},
-      {formula:'SUMPRODUCT(--ISNUMBER('+rg('U')+'),--('+rg('O')+'=1))'},
-      {formula:'SUMPRODUCT(--ISNUMBER('+rg('U')+'),('+rg('N')+'=1)+('+rg('O')+'=1)+('+rg('P')+'=1)+('+rg('Q')+'=1)+('+rg('R')+'=1)+('+rg('S')+'=1))'}]);
-    const nd=ws.getCell('A4');nd.value={formula:'IF(COUNT('+rg('U')+')=0,"No data for this date \u2014 add its rows in the Data sheet (see Guide).","")'};nd.font=EF({italic:true,bold:true,color:{argb:EC.redt}});
-    ws.getColumn(15).hidden=true;
+    kpiCells(ws,[{formula:'COUNT('+rg('T')+')'},{formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('N')+'=1))'},
+      {formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('O')+'=1))'},
+      {formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),('+rg('N')+'=1)+('+rg('O')+'=1)+('+rg('P')+'=1)+('+rg('Q')+'=1)+('+rg('R')+'=1))'}]);
+    const nd=ws.getCell('A4');nd.value={formula:'IF(COUNT('+rg('T')+')=0,"No data for this date \u2014 add its rows in the Data sheet (see Guide).","")'};nd.font=EF({italic:true,bold:true,color:{argb:EC.redt}});
+    ws.getColumn(14).hidden=true;
     for(let i=0;i<N;i++){const r=TOP+i,row=ws.getRow(r);row.height=20;
-      row.getCell(15).value={formula:'IFERROR(MATCH(ROW()-'+(TOP-1)+','+rg('U')+',0),"")'};
-      for(let c=1;c<=12;c++){const L=String.fromCharCode(65+c),ix='INDEX('+rg(L)+',$O'+r+')',cell=row.getCell(c);
-        cell.value={formula:'IF($O'+r+'="","",IF('+ix+'="","",'+ix+'))'};
+      row.getCell(14).value={formula:'IFERROR(MATCH(ROW()-'+(TOP-1)+','+rg('T')+',0),"")'};
+      for(let c=1;c<=12;c++){const L=String.fromCharCode(65+c),ix='INDEX('+rg(L)+',$N'+r+')',cell=row.getCell(c);
+        cell.value={formula:'IF($N'+r+'="","",IF('+ix+'="","",'+ix+'))'};
         cell.font=EF();cell.alignment={vertical:'middle',horizontal:c===1?'left':'center'};cell.border=BORD()}}
-    const END=TOP+N-1,flag=(col)=>'INDEX('+rg(col)+',$O'+TOP+')';
+    const END=TOP+N-1,flag=(col)=>'INDEX('+rg(col)+',$N'+TOP+')';
     const cf=(ref,formula,fill,font)=>ws.addConditionalFormatting({ref,rules:[{type:'expression',formulae:[formula],style:{fill:{type:'pattern',pattern:'solid',bgColor:{argb:fill}},font}}]});
-    ['N','O','P','Q','R','S'].forEach((fc,k)=>{const col=String.fromCharCode(69+k),ref=col+TOP+':'+col+END,early=k===5;
-      cf(ref,'AND($O'+TOP+'<>"",'+flag(fc)+'=1)',early?EC.amb:EC.red,{bold:true,color:{argb:early?EC.ambt:EC.redt}});
-      cf(ref,'AND($O'+TOP+'<>"",'+flag(fc)+'=2)',EC.grn,{strike:true,color:{argb:EC.grnt}})});
+    ['N','O','P','Q','R'].forEach((fc,k)=>{const col=String.fromCharCode(69+k),ref=col+TOP+':'+col+END;
+      cf(ref,'AND($N'+TOP+'<>"",'+flag(fc)+'=1)',EC.red,{bold:true,color:{argb:EC.redt}});
+      cf(ref,'AND($N'+TOP+'<>"",'+flag(fc)+'=2)',EC.grn,{strike:true,color:{argb:EC.grnt}})});
     cf('L'+TOP+':L'+END,'L'+TOP+'="Clean"',EC.grn,{bold:true,color:{argb:EC.grnt}});
     cf('L'+TOP+':L'+END,'AND(L'+TOP+'<>"",L'+TOP+'<>"Clean")',EC.red,{bold:true,color:{argb:EC.redt}});
     const gs=wb.addWorksheet('Guide');gs.getColumn(1).width=120;
@@ -420,9 +428,9 @@ async function exportReport(dates,mode){
      '2. The dropdown lists every day of the period. A day with no data shows a red message under the title.',
      '3. To add a missing date: open the Data sheet and type its rows under the last row, columns A to M. Nothing else needs to change.',
      '4. Column A must be the date as text exactly like the dropdown (dd/mm/yyyy), for example 15/10/2026. The column is already formatted as Text.',
-     '5. Optional: type 1 (violation) or 2 (excused) in the Flag columns N to S to colour the matching cell red or green.',
-     '6. Do not edit the hidden helper columns T and U, or the formulas on the Report sheet.',
-     'Colours: red = violation, green with strikethrough = excused by management, amber = early logout.',
+     '5. Optional: type 1 (violation) or 2 (excused) in the Flag columns N to R to colour the matching cell red or green.',
+     '6. Do not edit the hidden helper columns S and T, or the formulas on the Report sheet.',
+     'Colours: red = violation, green with strikethrough = excused by management.',
      'Capacity: '+(CAP-1)+' data rows and 150 agents per date.'].forEach((t,i)=>{const c=gs.getCell(i+1,1);c.value=t;c.font=EF({bold:i===0,size:i===0?13:10});c.alignment={wrapText:true,vertical:'top'}});
   }
   const buf=await wb.xlsx.writeBuffer();
