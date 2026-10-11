@@ -31,7 +31,7 @@ td{padding:9px 10px;border-top:1px solid var(--bd);white-space:nowrap}td.n{font-
 td.c{text-align:center}.hint{color:var(--mut);font-size:12px;margin:0 0 12px}.empty{padding:40px;text-align:center;color:var(--mut)}
 input.t{width:92px}h2{font-size:15px;margin:18px 0 8px}.tag{font-size:11px;color:var(--mut)}
 @media print{header,.bar,.hint{display:none}}
-header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px rgba(0,0,0,.25)}.k{border-top:3px solid var(--pri);box-shadow:0 1px 3px rgba(20,33,61,.06)}.k b{font-size:28px}th{position:sticky;top:0;z-index:1}td.n{position:sticky;left:0;background:var(--card)}tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(29,78,216,.06)}.chip{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}.chip.bad{background:var(--red);color:var(--redt)}.chip.good{background:var(--grn);color:var(--grnt)}.card.pad{padding:6px 18px 14px}
+header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px rgba(0,0,0,.25)}.k{border-top:3px solid var(--pri);box-shadow:0 1px 3px rgba(20,33,61,.06)}.k b{font-size:28px}th{position:sticky;top:0;z-index:1}td.n{position:sticky;left:0;background:var(--card)}tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(29,78,216,.06)}.chip{padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}.chip.bad{background:var(--red);color:var(--redt)}.chip.good{background:var(--grn);color:var(--grnt)}.card.pad{padding:12px 18px}
 .top-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:14px}
 .top-box{border-radius:10px;padding:10px 14px;border:1px solid var(--bd)}
 .top-box.best{background:var(--grn);border-color:#bbf7d0;color:var(--grnt)}
@@ -286,7 +286,14 @@ function monthly(){
 
   const selectedAgent=window.MONTH_SELECTED_AGENT||(alphaAgents[0]?alphaAgents[0].name:'');
   const agentLogs=(dList[selectedAgent]||[]);
-  const detailRows=agentLogs.map(l=>`<tr><td style="padding:5px 8px">${l.date}</td><td style="padding:5px 8px">${l.type}</td><td style="padding:5px 8px">${l.detail}</td></tr>`).join('')||'<tr><td colspan=3 class="empty" style="padding:15px">No unexcused violations for this agent</td></tr>';
+  
+  // تصميم جديد ومميز لجدول تفاصيل الموظف بدون أشرطة تمرير وبمسافات مضغوطة وجميلة
+  const detailRows=agentLogs.map(l=>`
+    <tr style="transition:background 0.2s">
+      <td style="padding:6px 12px;border-bottom:1px solid var(--bd);font-weight:500">${l.date}</td>
+      <td style="padding:6px 12px;border-bottom:1px solid var(--bd);color:var(--pri);font-weight:600">${l.type}</td>
+      <td style="padding:6px 12px;border-bottom:1px solid var(--bd);color:var(--mut)">${l.detail}</td>
+    </tr>`).join('')||'<tr><td colspan=3 class="empty" style="padding:20px;text-align:center;color:var(--mut)">No unexcused violations for this agent</td></tr>';
 
   const dropdownOpts=alphaAgents.map(a=>`<option value="${esc(a.name)}" ${a.name===selectedAgent?'selected':''}>${esc(a.name)}</option>`).join('');
 
@@ -307,10 +314,24 @@ function monthly(){
   <div class="card"><table><thead><tr><th>Employee</th><th class="c">Late</th><th class="c">Break Overrun</th><th class="c">CNA</th><th class="c">Work Overrun</th><th class="c">Emergency</th><th class="c">Total Real Violations</th></tr></thead><tbody>${rows}</tbody></table></div>
   
   <h2>🔍 Agent Daily Incident Lookup</h2>
-  <div class="card pad" style="max-width:700px">
-    <p class="hint" style="margin-bottom:8px">Select an agent to inspect the precise dates and times of their unexcused violations:</p>
-    <div class="bar" style="margin-bottom:8px"><label style="font-weight:600;font-size:13px">Select Agent: <select id="agent-select" style="margin-left:6px;padding:4px 8px">${dropdownOpts}</select></label></div>
-    <table style="font-size:12px"><thead><tr><th style="padding:6px 8px">Date</th><th style="padding:6px 8px">Violation Type</th><th style="padding:6px 8px">Detail</th></tr></thead><tbody>${detailRows}</tbody></table>
+  <div class="card" style="max-width:750px;padding:16px 20px;border-radius:12px;background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,0.04)">
+    <p class="hint" style="margin-bottom:12px">Select an agent to inspect the precise dates and times of their unexcused violations:</p>
+    <div class="bar" style="margin-bottom:14px"><label style="font-weight:600;font-size:13px">Select Agent: <select id="agent-select" style="margin-left:8px;padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-weight:500;outline:none">${dropdownOpts}</select></label></div>
+    
+    <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:var(--bg)">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:100%">
+        <thead>
+          <tr style="background:var(--hd);color:#fff">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:.5px">DATE</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:.5px">VIOLATION TYPE</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:.5px">DETAIL</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${detailRows}
+        </tbody>
+      </table>
+    </div>
   </div>`;
 }
 
@@ -420,7 +441,7 @@ async function exportReport(dates,mode){
     pick.value=dmy(first);
     pick.dataValidation={type:'list',allowBlank:false,showErrorMessage:true,errorTitle:'Invalid date',error:'Choose a date from the list.',formulae:['Lists!$A$2:$A$'+(dates.length+1)]};
     const hint=ws.getCell('C2');hint.value='\u25c0 choose a date from the list \u2014 the table shows only that date';hint.font=EF({italic:true,color:{argb:EC.mut}});
-    kpiCells(ws,[{formula:'COUNT('+rg('T')+')'},{formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('N')+'=1))'},
+    kpiCells(ws,[{formula:tab+'('+rg('T')+')'},{formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('N')+'=1))'},
       {formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),--('+rg('O')+'=1))'},
       {formula:'SUMPRODUCT(--ISNUMBER('+rg('T')+'),('+rg('N')+'=1)+('+rg('O')+'=1)+('+rg('P')+'=1)+('+rg('Q')+'=1)+('+rg('R')+'=1))'}]);
     const nd=ws.getCell('A4');nd.value={formula:'IF(COUNT('+rg('T')+')=0,"No data for this date \u2014 add its rows in the Data sheet (see Guide).","")'};nd.font=EF({italic:true,bold:true,color:{argb:EC.redt}});
