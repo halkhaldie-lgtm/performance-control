@@ -247,35 +247,80 @@ function logv(){
 const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
 const nvForDate=(dt,o)=>viol(dt,o).filter(v=>!exd(dt,o.name,v.t)).length;
 
-/* Professional Colored Excel Export */
+/* Interactive Dashboard Export with Date Dropdown */
 async function exportX(){
-  if(!date) return;
-  const names=Object.keys(S.days[date]||{}).sort();
-  if(!names.length){ alert("No data to export"); return; }
+  const m = date.slice(0, 7);
+  const ds = Object.keys(S.days).filter(d => d.startsWith(m)).sort();
+  if(!ds.length){ alert("No data to export"); return; }
   
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('Daily Performance');
+  const mainSheet = workbook.addWorksheet('Dashboard');
+  const dataSheet = workbook.addWorksheet('Data_Store');
+
+  // Populate hidden Data_Store sheet with all days in this month
+  dataSheet.addRow(['DateKey', 'DateFormatted', 'AgentName', 'ShiftStart', 'LoginTime', 'FirstReady', 'LateArrival', 'Logouts', 'Emergency', 'BreakTotal', 'WorkTotal', 'CallNoAns', 'LogoutTime', 'Status']);
   
-  sheet.mergeCells('A1:L1');
-  const titleCell = sheet.getCell('A1');
+  let dataRowCount = 1;
+  const uniqueDates = [];
+
+  ds.forEach(d => {
+    const formattedDate = dmy(d);
+    if (!uniqueDates.includes(formattedDate)) uniqueDates.push(formattedDate);
+    const names = Object.keys(S.days[d]||{}).sort();
+    
+    names.forEach(n => {
+      const o = calc(d, n);
+      dataRowCount++;
+      dataSheet.addRow([
+        d,
+        formattedDate,
+        o.name,
+        o.hasLogin ? hms(o.shift) : 'Prev. day',
+        o.hasLogin ? hms(o.login) : 'Prev. day',
+        o.first != null ? hms(o.first) : '—',
+        o.lateV ? formatDuration(mn(o.late)) : '0 min',
+        o.lo.n ? (o.lo.n + ' / ' + formatDuration(mn(o.lo.s))) : '0',
+        o.em.n ? (o.em.n + ' / ' + formatDuration(mn(o.em.s))) : '0',
+        formatDuration(mn(o.brk)),
+        formatDuration(mn(o.work)),
+        o.cna,
+        formatTimeOut(o.out),
+        nvForDate(d, o) ? (nvForDate(d, o) + ' open') : 'Clean'
+      ]);
+    });
+  });
+
+  // Setup Title on Main Dashboard Sheet
+  mainSheet.mergeCells('A1:L1');
+  const titleCell = mainSheet.getCell('A1');
   titleCell.value = 'PERFORMANCE CONTACT CENTER - DAILY REPORT';
   titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFF' } };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '0F1C3F' } };
-  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-  sheet.getRow(1).height = 30;
+  mainSheet.getRow(1).height = 30;
 
-  sheet.mergeCells('A2:L2');
-  const dateCell = sheet.getCell('A2');
-  dateCell.value = 'Report Date: ' + dmy(date);
-  dateCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: '1D4ED8' } };
-  dateCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F3F5F9' } };
-  dateCell.alignment = { vertical: 'middle', horizontal: 'left' };
-  sheet.getRow(2).height = 22;
+  // Dropdown Selection Box at Row 2 (Matching your exact requirement!)
+  mainSheet.getCell('A2').value = 'Report Date:';
+  mainSheet.getCell('A2').font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: '1D4ED8' } };
+  
+  const datePickerCell = mainSheet.getCell('B2');
+  datePickerCell.value = dmy(date);
+  datePickerCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFF' } };
+  datePickerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1D4ED8' } };
+  datePickerCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  mainSheet.getRow(2).height = 24;
 
-  sheet.addRow([]);
+  // Data Validation Dropdown in Cell B2 containing all month dates
+  datePickerCell.dataValidation = {
+    type: 'list',
+    allowBlank: false,
+    formulae: [`"${uniqueDates.join(',')}"`]
+  };
 
+  mainSheet.addRow([]); // Blank Row 3
+
+  // Table Headers
   const headers = ['Agent Name', 'Shift Start', 'Login Time', 'First Ready', 'Late Arrival', 'Logouts', 'Emergency', 'Break Total', 'Work Total', 'Call No Ans', 'Logout Time', 'Status'];
-  const headerRow = sheet.addRow(headers);
+  const headerRow = mainSheet.addRow(headers);
   headerRow.height = 25;
   
   headerRow.eachCell((cell) => {
@@ -285,24 +330,24 @@ async function exportX(){
     cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'medium'}, right: {style:'thin'} };
   });
 
-  names.forEach(n => {
-    const o = calc(date, n);
-    const rowValues = [
-      o.name,
-      o.hasLogin ? hms(o.shift) : 'Prev. day',
-      o.hasLogin ? hms(o.login) : 'Prev. day',
-      o.first != null ? hms(o.first) : '—',
-      o.lateV ? formatDuration(mn(o.late)) : '0 min',
-      o.lo.n ? (o.lo.n + ' / ' + formatDuration(mn(o.lo.s))) : '0',
-      o.em.n ? (o.em.n + ' / ' + formatDuration(mn(o.em.s))) : '0',
-      formatDuration(mn(o.brk)),
-      formatDuration(mn(o.work)),
-      o.cna,
-      formatTimeOut(o.out),
-      nv(o) ? (nv(o) + ' open') : 'Clean'
+  // Add 40 dynamic rows that instantly filter based on the dropdown date choice in B2
+  for (let i = 1; i <= 40; i++) {
+    const formulaRow = [
+      `=IFERROR(INDEX(Data_Store!C$2:C$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!D$2:D$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!E$2:E$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!F$2:F$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!G$2:G$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!H$2:H$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!I$2:I$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!J$2:J$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!K$2:K$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!L$2:L$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!M$2:M$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`,
+      `=IFERROR(INDEX(Data_Store!N$2:N$${dataRowCount}, SMALL(IF(Data_Store!B$2:B$${dataRowCount}=$B$2, ROW(Data_Store!B$2:B$${dataRowCount})-ROW(Data_Store!B$2)+1), ${i})), "")`
     ];
-    
-    const row = sheet.addRow(rowValues);
+
+    const row = mainSheet.addRow(formulaRow);
     row.height = 20;
 
     row.eachCell((cell, colNum) => {
@@ -310,29 +355,9 @@ async function exportX(){
       cell.alignment = { vertical: 'middle', horizontal: colNum === 1 ? 'left' : 'center' };
       cell.border = { top: {style:'thin', color:{argb:'E1E6EF'}}, left: {style:'thin', color:{argb:'E1E6EF'}}, bottom: {style:'thin', color:{argb:'E1E6EF'}}, right: {style:'thin', color:{argb:'E1E6EF'}} };
     });
+  }
 
-    const redFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FDE8E8' } };
-    const redFont = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'B91C1C' } };
-
-    if (o.lateV && !exd(date, o.name, 'late')) { row.getCell(5).fill = redFill; row.getCell(5).font = redFont; }
-    if (o.lo.n && !exd(date, o.name, 'logout')) { row.getCell(6).fill = redFill; row.getCell(6).font = redFont; }
-    if (o.em.n && !exd(date, o.name, 'emerg')) { row.getCell(7).fill = redFill; row.getCell(7).font = redFont; }
-    if (o.brkV && !exd(date, o.name, 'brk')) { row.getCell(8).fill = redFill; row.getCell(8).font = redFont; }
-    if (o.workV && !exd(date, o.name, 'work')) { row.getCell(9).fill = redFill; row.getCell(9).font = redFont; }
-    if (o.cna && !exd(date, o.name, 'cna')) { row.getCell(10).fill = redFill; row.getCell(10).font = redFont; }
-    
-    if (nv(o)) { row.getCell(12).fill = redFill; row.getCell(12).font = redFont; }
-    else { row.getCell(12).font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: '15803D' } }; }
-  });
-
-  sheet.columns.forEach(column => {
-    let maxLength = 12;
-    column.eachCell({ includeEmpty: false }, cell => {
-      const columnLength = cell.value ? cell.value.toString().length : 10;
-      if (columnLength > maxLength) maxLength = columnLength;
-    });
-    column.width = maxLength + 4;
-  });
+  mainSheet.columns.forEach(column => { column.width = 16; });
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
