@@ -40,16 +40,17 @@ header{background:linear-gradient(120deg,#0b1736,#1e3a8a);box-shadow:0 2px 12px 
 .v-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;background:var(--red);color:var(--redt)}
 .ok-badge{color:var(--grnt);font-weight:600}
 table.dt{min-width:0}table.dt th,table.dt td{padding:8px 7px}table.dt th{white-space:normal;line-height:1.2;vertical-align:bottom}
-.tp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:18px}
-.tp-card{background:var(--card);border:1px solid var(--bd);border-top:4px solid;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(20,33,61,.05)}
+.tp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:14px}
+.tp-card{background:var(--card);border:1px solid var(--bd);border-top:3px solid;border-radius:11px;padding:10px 12px;box-shadow:0 1px 4px rgba(20,33,61,.045)}
 .tp-card.best{border-top-color:#16a34a}.tp-card.worst{border-top-color:#dc2626}
-.tp-hd{display:flex;gap:10px;align-items:center;margin-bottom:8px}.tp-hd span{font-size:24px}.tp-hd b{display:block;font-size:14px}.tp-hd small{color:var(--mut);font-size:11px}
-.tp-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--bd)}
-.tp-rank{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;background:var(--bg);flex:none}
+.tp-hd{display:flex;gap:8px;align-items:center;margin-bottom:5px}.tp-hd span{font-size:19px}.tp-hd b{display:block;font-size:13px}.tp-hd small{color:var(--mut);font-size:10px}
+.tp-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--bd)}
+.tp-rank{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:var(--bg);flex:none}
 .tp-rank.worst{background:var(--red);color:var(--redt)}
-.tp-main{flex:1;min-width:0}.tp-nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tp-sub{font-size:11px;color:var(--mut);margin:1px 0 6px}
+.tp-main{flex:1;min-width:0}.tp-nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tp-sub{font-size:10px;color:var(--mut);margin:1px 0 4px}
 .tp-bar{height:6px;border-radius:99px;background:var(--bg);overflow:hidden}.tp-bar i{display:block;height:100%;border-radius:99px}.tp-bar i.best{background:#16a34a}.tp-bar i.worst{background:#dc2626}
-.tp-cnt{font-size:24px;font-weight:800;min-width:36px;text-align:right}.tp-cnt.best{color:var(--grnt)}.tp-cnt.worst{color:var(--redt)}
+.tp-cnt{font-size:19px;font-weight:800;min-width:28px;text-align:right}.tp-cnt.best{color:var(--grnt)}.tp-cnt.worst{color:var(--redt)}
+.received-high{background:#ffedd5;color:#c2410c;font-weight:800;border-radius:6px;box-shadow:inset 0 0 0 1px #fdba74;padding:4px 8px!important}.tp-card.best{background:linear-gradient(145deg,var(--card),rgba(22,163,74,.045))}.tp-card.worst{background:linear-gradient(145deg,var(--card),rgba(220,38,38,.045))}@media(max-width:600px){.tp-grid{grid-template-columns:1fr}.tp-card{padding:9px 11px}.tp-row{gap:7px;padding:6px 0}.tp-cnt{font-size:17px}}
 </style></head><body>
 <header><h1>Performance Contact Center<small>Agent attendance &amp; conduct monitoring</small></h1>
 <nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
@@ -263,7 +264,7 @@ function dash(){
     ${cell(date,o,'cna',o.cna,o.cna)}
     ${cell(date,o,'appt',o.apptV,o.appt,'v',o.apptT.join(', '))}
     <td>${o.lbrkV?rchip(date,o,'lbrk','Break '+o.lbrk[0]):''}${o.lworkV?rchip(date,o,'lwork','Work '+o.lwork[0]):''}${o.lbrkV||o.lworkV?'':'<span class="tag">—</span>'}</td>
-    <td>${formatTimeOut(o.out)}</td><td class="c n" title="${o.rt.join(', ')}">${rcnt(o)}</td><td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
+    <td>${formatTimeOut(o.out)}</td><td class="c n" title="${o.rt.join(', ')}"><span class="${rcnt(o)>8?'received-high':''}">${rcnt(o)}</span></td><td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
   return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
   <div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
