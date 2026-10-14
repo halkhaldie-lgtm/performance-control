@@ -259,7 +259,7 @@ function viol(dt,o){
   return v}
 const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Received >8']];
 
-const mcell=(txt,tip)=>`<td class="c" style="color:var(--mut)"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
+const mcell=(txt,tip)=>`<td class="c ok"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
 function cell(dt,o,t,bad,txt,cls,tip){
   if(!bad)return`<td class="c ok"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
   const c=S.ex[ek(dt,o.name,t)],x=exOn(c),nt=c&&c.n,tt=nt||tip||'';
@@ -284,11 +284,11 @@ function dash(){
     <td>${o.hasLogin?`<input class="t" type="time" data-sh="${o.name}" value="${hms(o.shift).slice(0,5)}">`:'<span class="tag">Prev. day</span>'}</td>
     <td>${o.hasLogin?hms(o.login):'Prev. day'}</td><td>${o.first!=null?hms(o.first):'—'}</td>
     ${cell(date,o,'late',o.lateV,formatDuration(mn(o.late)))}
-    ${o.exempt?mcell(o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'—',o.em.n?'Emergency (exempt, not counted): '+o.emT.join(' · '):''):cell(date,o,'emerg',o.emV,o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0','v',o.emT.join(' · '))}
+    ${o.exempt?mcell(o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',o.em.n?'Exempt – not counted: '+o.emT.join(' · '):''):cell(date,o,'emerg',o.emV,o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0','v',o.emT.join(' · '))}
     ${cell(date,o,'brk',o.brkV,formatDuration(mn(o.brk)))}
-    ${o.exempt?mcell('—','Work '+formatDuration(mn(o.work))+' (exempt, not counted)'):cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
+    ${o.exempt?mcell(formatDuration(mn(o.work)),'Exempt – not counted'):cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
     ${cell(date,o,'cna',o.cna,o.cna)}
-    ${o.exempt?mcell('—',o.appt?'Appointment confirmation >2 min ×'+o.appt+' (exempt, not counted): '+o.apptT.join(', '):''):cell(date,o,'appt',o.apptV,o.appt,'v',o.apptT.join(', '))}
+    ${o.exempt?mcell(o.appt,o.appt?'Exempt – not counted: '+o.apptT.join(', '):''):cell(date,o,'appt',o.apptV,o.appt,'v',o.apptT.join(', '))}
     <td>${o.lbrkV?rchip(date,o,'lbrk','Break '+o.lbrk[0]):''}${o.lworkV?rchip(date,o,'lwork','Work '+o.lwork[0]):''}${o.lbrkV||o.lworkV?'':'<span class="tag">—</span>'}</td>
     <td>${formatTimeOut(o.out)}</td>${cell(date,o,'recv',o.recvV,rcnt(o),'received-high',o.rt.join(', '))}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
@@ -445,7 +445,7 @@ function data(){
   const ex=(S.cfg&&S.cfg.exempt)||[];
   return`<div class="bar"><input type="file" id="f" accept=".xlsx,.xls"><span class="tag">Import Report (xlsx)</span></div>
   <div class="card"><table><thead><tr><th>Date</th><th>Agents</th><th>File</th><th>Imported</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-  <h2>Exempt agents</h2><div class="card pad"><p class="hint" style="margin:8px 0 10px">Work, Emergency and Appointment confirmation are <b>not counted</b> for these agents (shown as —, details appear on hover). Break, late arrival and everything else still count.</p>
+  <h2>Exempt agents</h2><div class="card pad"><p class="hint" style="margin:8px 0 10px">Work, Emergency and Appointment confirmation are <b>not counted</b> for these agents (still shown, in green, and never counted as violations). Break, late arrival and everything else still count.</p>
   <div style="margin-bottom:10px">${ex.map((n,i)=>`<span class="chip good" style="margin:0 6px 6px 0;font-size:12px">${esc(n)} <b data-exdel="${i}" style="cursor:pointer;margin-left:4px" title="Remove">×</b></span>`).join('')||'<span class="tag">No exempt agents</span>'}</div>
   <div class="bar" style="margin:0"><input id="ex-in" list="ex-dl" placeholder="Agent name" style="min-width:240px"><datalist id="ex-dl">${known.map(n=>`<option value="${esc(n)}">`).join('')}</datalist><button class="b p" id="ex-add">Add</button></div></div>`
 }
@@ -484,7 +484,7 @@ function repRow(d,o){
   const lv=[['lbrk',o.lbrkV],['lwork',o.lworkV]].filter(x=>x[1]),open=lv.some(x=>!exd(d,o.name,x[0]));
   const rs=[o.lbrkV?'Break '+o.lbrk[0]:'',o.lworkV?'Work '+o.lwork[0]:''].filter(Boolean).join(' · ')||'—';
   return{d,vals:[o.name,o.hasLogin?hms(o.shift):'Prev. day',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'—',
-    formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',formatDuration(mn(o.brk)),o.exempt?'—':formatDuration(mn(o.work)),o.cna,o.exempt?'—':o.appt,rs,
+    formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,o.appt,rs,
     formatTimeOut(o.out),rcnt(o),n?n+' open':'Clean'],
     fl:[f(o.lateV,'late'),f(o.emV,'emerg'),f(o.brkV,'brk'),f(o.workV,'work'),f(o.cna,'cna'),f(o.apptV,'appt'),open?1:(lv.length?2:0),f(o.recvV,'recv')]}}
 
