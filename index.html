@@ -51,6 +51,15 @@ table.dt{min-width:0}table.dt th,table.dt td{padding:8px 7px}table.dt th{white-s
 .tp-bar{height:6px;border-radius:99px;background:var(--bg);overflow:hidden}.tp-bar i{display:block;height:100%;border-radius:99px}.tp-bar i.best{background:#16a34a}.tp-bar i.worst{background:#dc2626}
 .tp-cnt{font-size:19px;font-weight:800;min-width:28px;text-align:right}.tp-cnt.best{color:var(--grnt)}.tp-cnt.worst{color:var(--redt)}
 .received-high{background:#ffedd5;color:#c2410c;font-weight:800;border-radius:6px;box-shadow:inset 0 0 0 1px #fdba74;padding:4px 8px!important}.tp-card.best{background:linear-gradient(145deg,var(--card),rgba(22,163,74,.045))}.tp-card.worst{background:linear-gradient(145deg,var(--card),rgba(220,38,38,.045))}@media(max-width:600px){.tp-grid{grid-template-columns:1fr}.tp-card{padding:9px 11px}.tp-row{gap:7px;padding:6px 0}.tp-cnt{font-size:17px}}
+.ib{border:0;background:var(--bg);border-radius:6px;padding:3px 6px;cursor:pointer;font-size:12px;margin-right:3px;line-height:1}.ib:hover{background:var(--bd)}
+.lkc{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:99px;padding:4px 12px;font:600 12px Inter,'Segoe UI',system-ui,sans-serif;cursor:pointer}.lkc.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.lg-day{font-size:12px;font-weight:700;color:var(--mut);margin:14px 0 4px;display:flex;gap:8px;align-items:center}.lg-day:after{content:'';flex:1;height:1px;background:var(--bd)}
+.lg-row{display:grid;grid-template-columns:52px 170px 1fr 150px;gap:10px;align-items:start;padding:7px 4px;border-bottom:1px solid var(--bd);font-size:13px}.lg-row:last-child{border-bottom:0}
+.lg-t{color:var(--mut);font-variant-numeric:tabular-nums}.lg-d{word-break:break-word}
+.lg-b{display:inline-block;justify-self:start;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;background:var(--bg);color:var(--mut)}
+.lg-b.imp{background:#dbeafe;color:#1d4ed8}.lg-b.exc{background:var(--grn);color:var(--grnt)}.lg-b.man{background:#ede9fe;color:#6d28d9}.lg-b.del{background:var(--red);color:var(--redt)}.lg-b.set{background:var(--amb);color:var(--ambt)}.lg-b.usr{background:#e0f2fe;color:#0369a1}
+.lg-u{display:flex;align-items:center;gap:6px;color:var(--mut);font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.lg-u i{font-style:normal;flex:none;width:20px;height:20px;border-radius:50%;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+@media(max-width:760px){.lg-row{grid-template-columns:48px 1fr}.lg-row .lg-d,.lg-row .lg-u{grid-column:2}}
 </style></head><body>
 <header><h1>Performance Contact Center<small>Agent attendance &amp; conduct monitoring</small></h1>
 <nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
@@ -205,13 +214,13 @@ const agentsOf=d=>[...new Set([...Object.keys(S.days[d]||{}),...Object.keys(S.ma
 const daysIn=m=>[...new Set([...Object.keys(S.days),...Object.keys(S.man).map(k=>k.slice(0,10))])].filter(d=>d.startsWith(m)).sort();
 function finish(o){const ex=isExempt(o.name);o.exempt=ex;
   o.brkV=o.brk>LIM.brk;o.workV=!ex&&o.work>LIM.work;o.emV=!ex&&o.em.n>0;
-  o.apptV=o.appt>0;o.lbrkV=o.lbrk.length>0;o.lworkV=!ex&&o.lwork.length>0;o.recvV=rcnt(o)>LIM.recv;return o}
+  o.apptV=!ex&&o.appt>0;o.lbrkV=o.lbrk.length>0;o.lworkV=!ex&&o.lwork.length>0;o.recvV=rcnt(o)>LIM.recv;return o}
 function manualCalc(dt,name,m){
   const sh=tosec(S.shifts[dt+'|'+name]),shift=sh!=null?sh:(tosec(m.shift)||0),login=tosec(m.login),first=tosec(m.first);
   const ref=first!=null?first:login,late=ref!=null&&shift?Math.max(0,ref-shift):0;let out=tosec(m.out);if(out!=null&&m.outNext)out+=86400;
   return finish({name,login:login||0,shift,hasLogin:login!=null,auto:false,first:ref,late,lateV:late>LIM.grace,
     em:{n:m.emN||0,s:(m.emM||0)*60},brk:(m.brk||0)*60,work:(m.work||0)*60,cna:m.cna||0,out,recv:{1:m.recv||0},rt:[],
-    appt:m.appt||0,apptT:[],lbrk:m.lbrk?['manual']:[],lwork:m.lwork?['manual']:[],manual:true,note:m.note||''})}
+    appt:m.appt||0,apptT:[],emT:[],lbrk:m.lbrk?['manual']:[],lwork:m.lwork?['manual']:[],manual:true,note:m.note||''})}
 function calc(dt,name){
   if(S.man[dt+'|'+name])return manualCalc(dt,name,S.man[dt+'|'+name]);
   const ev=getEvents(dt,name);
@@ -221,11 +230,11 @@ function calc(dt,name){
   const targetCheckTime=li?(fr?fr[0]:login):null; // no login that day = shift started the previous day: no lateness
   const late=targetCheckTime!=null?Math.max(0,targetCheckTime-shift):0;
   const o={name,login,shift,hasLogin:!!li,auto:sh==null,first:targetCheckTime,late,lateV:late>LIM.grace,
-    em:{n:0,s:0},brk:0,work:0,cna:0,out:null,recv:{},rt:[],appt:0,apptT:[],lbrk:[],lwork:[]};
+    em:{n:0,s:0},brk:0,work:0,cna:0,out:null,recv:{},rt:[],appt:0,apptT:[],emT:[],lbrk:[],lwork:[]};
   ev.forEach((e,i)=>{
     if(e[1]==='O'){if(li&&e[0]<login)return;const nx=ev.slice(i+1).find(x=>x[1]==='I');
-      if(!nx){o.out=e[0];if(/emergency/i.test(e[2])){o.em.n++;}return}
-      const g=nx[0]-e[0];if(g>LIM.emerg&&/emergency/i.test(e[2])){o.em.n++;o.em.s+=g}}
+      if(!nx){o.out=e[0];if(/emergency/i.test(e[2])){o.em.n++;o.emT.push(hms(e[0])+' → no return today')}return}
+      const g=nx[0]-e[0];if(g>LIM.emerg&&/emergency/i.test(e[2])){o.em.n++;o.em.s+=g;o.emT.push(hms(e[0])+' → '+hms(nx[0])+' ('+formatDuration(mn(g))+')')}}
     else if(e[1]==='N'){const endS=shift+LIM.shift;
       if(/^break/i.test(e[2])){o.brk+=e[3];if(li&&e[0]>=endS-LIM.lastBrk&&e[0]<=endS)o.lbrk.push(hms(e[0]))}
       else if(/^work$/i.test(e[2])){o.work+=e[3];if(li&&e[0]>=endS-LIM.lastWork&&e[0]<=endS)o.lwork.push(hms(e[0]))}
@@ -239,7 +248,7 @@ const exd=(d,n,t)=>exOn(S.ex[ek(d,n,t)]);
 function viol(dt,o){
   const v=[];
   if(o.lateV)v.push({t:'late',l:'Late arrival',v:formatDuration(mn(o.late))});
-  if(o.emV)v.push({t:'emerg',l:'Emergency ×'+o.em.n,v:formatDuration(mn(o.em.s))});
+  if(o.emV)v.push({t:'emerg',l:'Emergency ×'+o.em.n,v:o.emT.length?o.emT.join(' · '):formatDuration(mn(o.em.s))});
   if(o.brkV)v.push({t:'brk',l:'Break overrun',v:formatDuration(mn(o.brk-LIM.brk))+' over'});
   if(o.workV)v.push({t:'work',l:'Work overrun',v:formatDuration(mn(o.work-LIM.work))+' over'});
   if(o.cna)v.push({t:'cna',l:'Call No Answer',v:o.cna+' call(s)'});
@@ -250,6 +259,7 @@ function viol(dt,o){
   return v}
 const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Received >8']];
 
+const mcell=(txt,tip)=>`<td class="c" style="color:var(--mut)"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
 function cell(dt,o,t,bad,txt,cls,tip){
   if(!bad)return`<td class="c ok"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
   const c=S.ex[ek(dt,o.name,t)],x=exOn(c),nt=c&&c.n,tt=nt||tip||'';
@@ -269,15 +279,16 @@ function dash(){
   rs.forEach(o=>viol(date,o).forEach(v=>exd(date,o.name,v.t)?ex++:tv++));
   const ct=f=>rs.filter(o=>f(o)).length;
   const body=rs.map(o=>{
-    return`<tr><td class="n">${esc(o.name)}${o.manual?` <span class="chip good" data-man="${esc(o.name)}" style="cursor:pointer" title="Manual entry – click to edit">manual</span>`:''}${o.exempt?` <span class="tag" title="Work and Emergency are not counted">(exempt)</span>`:''}</td>
+    return`<tr><td class="n">${esc(o.name)}${o.manual?` <span class="chip good" data-man="${esc(o.name)}" style="cursor:pointer" title="Manual entry – click to edit">manual</span>`:''}${o.exempt?` <span class="tag" title="Work, Emergency and Appointment are not counted">(exempt)</span>`:''}</td>
+    <td class="c" style="white-space:nowrap">${USER_ROLE!=='viewer'?`<button class="ib" data-aedit="${esc(o.name)}" title="Edit this agent's data">✎</button><button class="ib" data-adel="${esc(o.name)}" title="Delete this agent's data for this date">🗑</button>`:''}</td>
     <td>${o.hasLogin?`<input class="t" type="time" data-sh="${o.name}" value="${hms(o.shift).slice(0,5)}">`:'<span class="tag">Prev. day</span>'}</td>
     <td>${o.hasLogin?hms(o.login):'Prev. day'}</td><td>${o.first!=null?hms(o.first):'—'}</td>
     ${cell(date,o,'late',o.lateV,formatDuration(mn(o.late)))}
-    ${cell(date,o,'emerg',o.emV,o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0')}
+    ${o.exempt?mcell(o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'—',o.em.n?'Emergency (exempt, not counted): '+o.emT.join(' · '):''):cell(date,o,'emerg',o.emV,o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0','v',o.emT.join(' · '))}
     ${cell(date,o,'brk',o.brkV,formatDuration(mn(o.brk)))}
-    ${cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
+    ${o.exempt?mcell('—','Work '+formatDuration(mn(o.work))+' (exempt, not counted)'):cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
     ${cell(date,o,'cna',o.cna,o.cna)}
-    ${cell(date,o,'appt',o.apptV,o.appt,'v',o.apptT.join(', '))}
+    ${o.exempt?mcell('—',o.appt?'Appointment confirmation >2 min ×'+o.appt+' (exempt, not counted): '+o.apptT.join(', '):''):cell(date,o,'appt',o.apptV,o.appt,'v',o.apptT.join(', '))}
     <td>${o.lbrkV?rchip(date,o,'lbrk','Break '+o.lbrk[0]):''}${o.lworkV?rchip(date,o,'lwork','Work '+o.lwork[0]):''}${o.lbrkV||o.lworkV?'':'<span class="tag">—</span>'}</td>
     <td>${formatTimeOut(o.out)}</td>${cell(date,o,'recv',o.recvV,rcnt(o),'received-high',o.rt.join(', '))}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
@@ -287,7 +298,7 @@ function dash(){
   <div class="k"><b>${ct(o=>o.emV)}</b><span>Emergency</span></div>
   <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
   <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((a,o)=>a+rcnt(o),0)}</b><span>Received (1,2 sec)</span></div><div class="k"><b>${ct(o=>o.apptV)}</b><span>Appointment >2 min</span></div><div class="k"><b>${ct(o=>o.lbrkV||o.lworkV)}</b><span>Restricted time</span></div></div>
-  <div class="card"><table class="dt"><thead><tr><th>Agent</th><th>Shift start</th><th>Login</th><th>First active</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Appt. confirm &gt;2 min</th><th title="Break in the last 15 min or Work in the last 5 min of the shift">Restricted time</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
+  <div class="card"><table class="dt"><thead><tr><th>Agent</th><th></th><th>Shift start</th><th>Login</th><th>First active</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Appt. confirm &gt;2 min</th><th title="Break in the last 15 min or Work in the last 5 min of the shift">Restricted time</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
 
 function monthly(){
   const ds=daysIn(month);
@@ -304,7 +315,7 @@ function monthly(){
         A[n].rawTypes[v.t]=(A[n].rawTypes[v.t]||0)+count;
         A[n].types[v.l]=(A[n].types[v.l]||0)+count;
         dList[n]=dList[n]||[];
-        dList[n].push({date:dmy(d),type:v.l,detail:v.v});
+        dList[n].push({date:dmy(d),type:v.l,detail:v.v,t:v.t});
       }
     })
   }));
@@ -346,8 +357,10 @@ function monthly(){
   const selectedAgent=window.MONTH_SELECTED_AGENT||(alphaAgents[0]?alphaAgents[0].name:'');
   const agentLogs=(dList[selectedAgent]||[]);
   const sumT=(A[selectedAgent]?A[selectedAgent].rawTypes:{});
-  const chipsHtml=`<div style="margin:0 0 12px">${Object.entries(sumT).filter(x=>x[1]>0).map(x=>`<span class="chip bad" style="margin:0 6px 6px 0">${TN[x[0]]||x[0]} ×${x[1]}</span>`).join('')||'<span class="chip good">No unexcused violations</span>'}</div>`;
-  const detailRows=agentLogs.map(l=>`
+  const LT=(window.LK_T&&sumT[window.LK_T])?window.LK_T:'';
+  const logsF=LT?agentLogs.filter(l=>l.t===LT):agentLogs;
+  const chipsHtml=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px"><button class="lkc ${LT?'':'on'}" data-lt="">All · ${agentLogs.length}</button>${Object.entries(sumT).filter(x=>x[1]>0).map(x=>`<button class="lkc ${LT===x[0]?'on':''}" data-lt="${x[0]}">${TN[x[0]]||x[0]} ×${x[1]}</button>`).join('')}</div>`;
+  const detailRows=agentLogs.filter(l=>!(window.LK_T&&sumT[window.LK_T])||l.t===window.LK_T).map(l=>`
     <tr style="transition:background 0.2s">
       <td style="padding:6px 12px;border-bottom:1px solid var(--bd);font-weight:500">${l.date}</td>
       <td style="padding:6px 12px;border-bottom:1px solid var(--bd);color:var(--pri);font-weight:600">${l.type}</td>
@@ -432,16 +445,26 @@ function data(){
   const ex=(S.cfg&&S.cfg.exempt)||[];
   return`<div class="bar"><input type="file" id="f" accept=".xlsx,.xls"><span class="tag">Import Report (xlsx)</span></div>
   <div class="card"><table><thead><tr><th>Date</th><th>Agents</th><th>File</th><th>Imported</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-  <h2>Exempt agents</h2><div class="card pad"><p class="hint" style="margin:8px 0 10px">Work and Emergency are <b>not counted</b> for these agents. Break, late arrival and everything else still count.</p>
+  <h2>Exempt agents</h2><div class="card pad"><p class="hint" style="margin:8px 0 10px">Work, Emergency and Appointment confirmation are <b>not counted</b> for these agents (shown as —, details appear on hover). Break, late arrival and everything else still count.</p>
   <div style="margin-bottom:10px">${ex.map((n,i)=>`<span class="chip good" style="margin:0 6px 6px 0;font-size:12px">${esc(n)} <b data-exdel="${i}" style="cursor:pointer;margin-left:4px" title="Remove">×</b></span>`).join('')||'<span class="tag">No exempt agents</span>'}</div>
   <div class="bar" style="margin:0"><input id="ex-in" list="ex-dl" placeholder="Agent name" style="min-width:240px"><datalist id="ex-dl">${known.map(n=>`<option value="${esc(n)}">`).join('')}</datalist><button class="b p" id="ex-add">Add</button></div></div>`
 }
 
+const LGC=[['all','All'],['imp','Imports'],['exc','Excuses & notes'],['man','Manual data'],['del','Deletions'],['set','Settings'],['usr','Users']];
+const lgCat=a=>/^Import/i.test(a)?'imp':/^(Excuse|Excused|Note|Restore)/i.test(a)?'exc':/^(Manual entry)/i.test(a)?'man':/^Delete/i.test(a)?'del':/^(Shift|Exempt)/i.test(a)?'set':/^(Create user|Disable|Enable|Change role)/i.test(a)?'usr':'set';
 function logv(){
-  const items = LOGS || [];
-  const rows = items.map(x => `<tr><td>${new Date(x.t).toLocaleString()}</td><td>${esc(x.n||'')}</td><td>${esc(x.a)}</td><td>${esc(x.d)}</td></tr>`).join('') || '<tr><td colspan=4 class="empty">No logs</td></tr>';
-  return `<p class="hint">Audit trail</p><div class="card"><table style="min-width:600px"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-}
+  const all=(LOGS||[]).map(x=>Object.assign({c:lgCat(x.a||'')},x)),C=window.LG_C||'all',Q=(window.LG_Q||'').toLowerCase(),N=window.LG_N||60;
+  const cnt=k=>k==='all'?all.length:all.filter(x=>x.c===k).length;
+  const list=all.filter(x=>(C==='all'||x.c===C)&&(!Q||((x.n||'')+' '+x.a+' '+x.d).toLowerCase().includes(Q)));
+  const shown=list.slice(0,N),day=t=>new Date(t).toLocaleDateString('en-CA'),today=day(Date.now()),yest=day(Date.now()-864e5);
+  let last='',body='';
+  shown.forEach(x=>{const dk=day(x.t);
+    if(dk!==last){last=dk;const n=list.filter(y=>day(y.t)===dk).length;body+=`<div class="lg-day">${dk===today?'Today':dk===yest?'Yesterday':dmy(dk)}<span class="tag">${n}</span></div>`}
+    const u=(x.n||'').split('@')[0]||'—';
+    body+=`<div class="lg-row"><span class="lg-t">${new Date(x.t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><span class="lg-b ${x.c}">${esc(x.a)}</span><span class="lg-d">${esc(x.d)}</span><span class="lg-u" title="${esc(x.n||'')}"><i>${esc(u.charAt(0).toUpperCase())}</i>${esc(u)}</span></div>`});
+  return`<div class="bar" style="margin-bottom:10px"><input id="lg-q" placeholder="Search the log…" value="${esc(window.LG_Q||'')}" style="min-width:240px"><span class="tag">${list.length} of ${all.length} entries</span></div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${LGC.map(c=>`<button class="lkc ${C===c[0]?'on':''}" data-lc="${c[0]}">${c[1]} · ${cnt(c[0])}</button>`).join('')}</div>
+  <div class="card" style="padding:4px 14px 10px;overflow:visible">${body||'<div class="empty">No entries</div>'}${list.length>shown.length?`<div style="text-align:center;padding-top:12px"><button class="b" id="lg-more">Show more (${list.length-shown.length})</button></div>`:''}</div>`}
 
 const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
 const nvForDate=(dt,o)=>viol(dt,o).filter(v=>!exd(dt,o.name,v.t)).length;
@@ -461,7 +484,7 @@ function repRow(d,o){
   const lv=[['lbrk',o.lbrkV],['lwork',o.lworkV]].filter(x=>x[1]),open=lv.some(x=>!exd(d,o.name,x[0]));
   const rs=[o.lbrkV?'Break '+o.lbrk[0]:'',o.lworkV?'Work '+o.lwork[0]:''].filter(Boolean).join(' · ')||'—';
   return{d,vals:[o.name,o.hasLogin?hms(o.shift):'Prev. day',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'—',
-    formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,o.appt,rs,
+    formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',formatDuration(mn(o.brk)),o.exempt?'—':formatDuration(mn(o.work)),o.cna,o.exempt?'—':o.appt,rs,
     formatTimeOut(o.out),rcnt(o),n?n+' open':'Clean'],
     fl:[f(o.lateV,'late'),f(o.emV,'emerg'),f(o.brkV,'brk'),f(o.workV,'work'),f(o.cna,'cna'),f(o.apptV,'appt'),open?1:(lv.length?2:0),f(o.recvV,'recv')]}}
 
@@ -606,7 +629,7 @@ document.addEventListener('change',e=>{const t=e.target;
   else if(t.id==='mo'&&t.value){month=t.value;render()}
   else if(t.id==='f'&&t.files[0])importFile(t.files[0]);
   else if(t.dataset.sh){const k=date+'|'+t.dataset.sh;S.shifts[k]=t.value;persistMap('sh',k);logA('Shift start',dmy(date)+' · '+t.dataset.sh+' = '+t.value);render()}
-  else if(t.id==='agent-select'){window.MONTH_SELECTED_AGENT=t.value;render()}
+  else if(t.id==='agent-select'){window.MONTH_SELECTED_AGENT=t.value;window.LK_T='';render()}
 });
 render();
 document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))openExport();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
@@ -626,8 +649,15 @@ document.addEventListener('click',async e=>{const id=e.target.id;
     catch(err){msg.textContent='Failed: '+err.message}
     btn.disabled=false}});
 
+function prefillFromCalc(name){const o=calc(date,name),hm=x=>x==null?'':hms(x).slice(0,5);
+  return{shift:o.hasLogin?hm(o.shift):'',login:o.hasLogin?hm(o.login):'',first:hm(o.first),out:hm(o.out),outNext:o.out!=null&&o.out>=86400,brk:Math.round(o.brk/60),work:Math.round(o.work/60),emN:o.em.n,emM:Math.round(o.em.s/60),cna:o.cna,appt:o.appt,recv:rcnt(o),lbrk:o.lbrk.length>0,lwork:o.lwork.length>0}}
+async function delAgent(name){if(!confirm('Delete ALL data of '+name+' for '+dmy(date)+'?\nThis removes the agent from this date.'))return;
+  const d=date;
+  if(S.days[d]&&S.days[d][name]){delete S.days[d][name];S.idx[d]=S.idx[d]||{a:0,t:0,f:'',p:0};S.idx[d].a=Object.keys(S.days[d]).length;S.idx[d].t=Date.now();await saveDay(d);await saveIdx()}
+  const k=d+'|'+name;if(S.man[k]){delete S.man[k];persistMap('mn',k)}
+  logA('Delete agent data',dmy(d)+' · '+name);render()}
 function openMan(name){
-  const r=(name&&S.man[date+'|'+name])||{},hasEv=!!(name&&S.days[date]&&S.days[date][name]);
+  const r=(name&&S.man[date+'|'+name])||(name?prefillFromCalc(name):{}),hasEv=!!(name&&S.days[date]&&S.days[date][name]);
   const known=[...new Set([...Object.keys(S.days).flatMap(d=>Object.keys(S.days[d])),...Object.keys(S.man).map(k=>k.slice(11))])].sort();
   const f=(id,lab,val,type)=>`<label class="tag" style="display:grid;gap:3px">${lab}<input id="${id}" type="${type||'text'}" ${type==='number'?'min="0"':''} value="${esc(val==null||val===0&&type==='number'?'':val)}" style="width:100%"></label>`;
   const ck=(id,lab,on)=>`<label class="tag" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="${id}" ${on?'checked':''}> ${lab}</label>`;
@@ -653,7 +683,7 @@ function saveMan(){const g=id=>($('#'+id)||{}).value||'',c=id=>!!($('#'+id)||{})
   const k=date+'|'+name;S.man[k]=rec;persistMap('mn',k);logA('Manual entry',dmy(date)+' · '+name+(rec.note?' — '+rec.note:''));
   const m=document.getElementById('mdl');if(m)m.remove();render()}
 function delMan(){const n=($('#mn-name')||{}).value,k=date+'|'+n;delete S.man[k];persistMap('mn',k);logA('Delete manual entry',dmy(date)+' · '+n);const m=document.getElementById('mdl');if(m)m.remove();render()}
-document.addEventListener('click',e=>{if(USER_ROLE==='viewer'&&e.target.closest('[data-ex],[data-del],#addman,#mn-save,#mn-del,#ex-add,[data-exdel],[data-man]')){e.stopPropagation();alert('This is a read-only account.')}},true);
+document.addEventListener('click',e=>{if(USER_ROLE==='viewer'&&e.target.closest('[data-ex],[data-del],#addman,#mn-save,#mn-del,#ex-add,[data-exdel],[data-man],[data-aedit],[data-adel]')){e.stopPropagation();alert('This is a read-only account.')}},true);
 document.addEventListener('click',e=>{const t=e.target,id=t.id,x=t.closest('[data-man]'),xd=t.closest('[data-exdel]');
   if(id==='addman')openMan(null);
   else if(x)openMan(x.dataset.man);
@@ -661,5 +691,12 @@ document.addEventListener('click',e=>{const t=e.target,id=t.id,x=t.closest('[dat
   else if(id==='mn-del')delMan();
   else if(id==='ex-add'){const v=($('#ex-in').value||'').trim().replace(/\s+/g,' ');if(!v)return;S.cfg=S.cfg||{exempt:[]};if(!S.cfg.exempt.some(n=>nz(n)===nz(v))){S.cfg.exempt.push(v);saveCfg();logA('Exempt agent added',v)}render()}
   else if(xd){const i=+xd.dataset.exdel,n=S.cfg.exempt[i];S.cfg.exempt.splice(i,1);saveCfg();logA('Exempt agent removed',n);render()}});
+document.addEventListener('click',e=>{const t=e.target,a=t.closest('[data-aedit]'),d=t.closest('[data-adel]'),l=t.closest('[data-lt]'),c=t.closest('[data-lc]');
+  if(a)openMan(a.dataset.aedit);
+  else if(d)delAgent(d.dataset.adel);
+  else if(l){window.LK_T=l.dataset.lt;render()}
+  else if(c){window.LG_C=c.dataset.lc;window.LG_N=60;render()}
+  else if(t.id==='lg-more'){window.LG_N=(window.LG_N||60)+60;render()}});
+document.addEventListener('input',e=>{if(e.target.id==='lg-q'){window.LG_Q=e.target.value;window.LG_N=60;const p=e.target.selectionStart;render();const q=$('#lg-q');if(q){q.focus();q.setSelectionRange(p,p)}}});
 boot();
 </script></body></html>
