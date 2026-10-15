@@ -65,7 +65,7 @@ table.dt{min-width:0}table.dt th,table.dt td{padding:8px 7px}table.dt th{white-s
 <nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
 <main id="app"></main>
 <script>
-const LIM={grace:300,emerg:180,brk:43*60,work:300,cna:6,shift:8*3600,appt:120,lastBrk:900,lastWork:300,recv:8};
+const LIM={grace:300,emerg:180,brk:43*60,work:300,cna:6,shift:8*3600,appt:120,lastBrk:900,lastWork:300,recv:6};
 let S={days:{},idx:{},shifts:{},ex:{},man:{},cfg:{exempt:['Dari Alshammari','Hatem Rashed','Walid Ibrahim','Abdulaziz Jasem','Hawara Abbas']}},tab='dash',date='',month='';const FB_CONFIG={apiKey:"AIzaSyC5wAmajiFgKEAfi4Ay0ZA1QGL-KS4K9zo",authDomain:"performance-control-ab7f9.firebaseapp.com",projectId:"performance-control-ab7f9",storageBucket:"performance-control-ab7f9.firebasestorage.app",messagingSenderId:"599359001764",appId:"1:599359001764:web:8ae96947247d8036b60231"};
 let MEN='',DB=null,ME=null,LOADED={},LOGS=null,USER_ROLE='editor';
 try{const r=localStorage.getItem('pcc_v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
@@ -162,7 +162,7 @@ function importFile(f){
 
 let WANT=null;
 const exOn=v=>v===1||!!(v&&v.e===1);
-const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer',appt:'Appointment confirmation >2 min',lbrk:'Break in last 15 min',lwork:'Work in last 5 min',recv:'Talking over 8 (0–3 sec)'};
+const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer',appt:'Appointment confirmation >2 min',lbrk:'Break in last 15 min',lwork:'Work in last 5 min',recv:'Talking over 6 (0–3 sec)'};
 function openNote(k){
   const [d,n,t]=k.split('|'),cur=S.ex[k],on=exOn(cur),note=(cur&&cur.n)||'';
   const m=document.createElement('div');m.id='mdl';m.dataset.k=k;m.style.cssText=MS;
@@ -202,11 +202,7 @@ async function delDay(d){const p=(S.idx[d]||{}).p||1;delete S.days[d];delete S.i
 const rawEv=(dt,name)=>((S.days[dt]&&S.days[dt][name])||[]).slice().sort((a,b)=>a[0]-b[0]);
 const isOpen=(dt,name)=>{const e=rawEv(dt,name);return e.length>0&&e[e.length-1][1]!=='O'};
 const tailLen=(dt,name)=>{const e=rawEv(dt,name),i=e.findIndex(x=>x[1]==='O');return i<0?e.length:i+1};
-function getEvents(dt,name){
-  let evs=rawEv(dt,name);
-  if(isOpen(addDays(dt,-1),name))evs=evs.slice(tailLen(dt,name));
-  if(isOpen(dt,name)){const nx=addDays(dt,1),e=rawEv(nx,name);evs=evs.concat(e.slice(0,tailLen(nx,name)).map(x=>[x[0]+86400,x[1],x[2],x[3]]))}
-  return evs}
+function getEvents(dt,name){return rawEv(dt,name)}
 
 const nz=x=>String(x).toLowerCase().replace(/\s+/g,' ').trim();
 const isExempt=name=>(S.cfg&&S.cfg.exempt||[]).some(x=>nz(x)===nz(name));
@@ -242,6 +238,7 @@ function calc(dt,name){
       else if(/^work$/i.test(e[2])){o.work+=e[3];if(li&&e[0]>=endS-LIM.lastWork&&e[0]<=endS)o.lwork.push(hms(e[0]))}
       else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++;
       else if(/appointment/i.test(e[2])&&e[3]>LIM.appt){o.appt++;o.apptT.push(hms(e[0])+' ('+formatDuration(mn(e[3]))+')')}}});
+  if(o.out==null&&li&&isOpen(dt,name)){const t=rawEv(addDays(dt,1),name).find(x=>x[1]==='O'&&/end\s*of\s*shift/i.test(x[2]));if(t){o.out=t[0]+86400;o.outNext=true}}
   rawEv(dt,name).forEach(e=>{if(e[1]==='T'){o.recv[e[3]]=(o.recv[e[3]]||0)+1;o.rt.push(hms(e[0])+' ('+e[3]+'s)')}});
   return finish(o)}
 
@@ -259,7 +256,7 @@ function viol(dt,o){
   if(o.lworkV)v.push({t:'lwork',l:'Work in last 5 min',v:o.lwork.join(', ')});
   if(o.recvV)v.push({t:'recv',l:'Talking over '+LIM.recv+' (0–3 sec)',v:rcnt(o)+' calls'+(o.rt.length?': '+o.rt.join(', '):'')});
   return v}
-const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Talking >8']];
+const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Talking (0–3 sec)']];
 
 const emDur=g=>g<60?g+' sec':formatDuration(mn(g));
 const emTxt=o=>o.em.n?o.em.n+' / '+emDur(o.em.s):'0';
@@ -295,7 +292,7 @@ function dash(){
     ${cell(date,o,'cna',o.cna,o.cna)}
     ${o.exempt?mcell(o.appt,o.appt?'Exempt – not counted: '+o.apptT.join(', '):''):cell(date,o,'appt',o.apptV,o.appt,'v',o.apptT.join(', '))}
     <td>${o.lbrkV?rchip(date,o,'lbrk','Break '+o.lbrk[0]):''}${o.lworkV?rchip(date,o,'lwork','Work '+o.lwork[0]):''}${o.lbrkV||o.lworkV?'':'<span class="tag">—</span>'}</td>
-    <td>${formatTimeOut(o.out)}</td>${cell(date,o,'recv',o.recvV,rcnt(o),'received-high',o.rt.join(', '))}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
+    <td${o.outNext?' title="Logout taken from the next day\'s report"':''}>${formatTimeOut(o.out)}</td>${cell(date,o,'recv',o.recvV,rcnt(o),'received-high',o.rt.join(', '))}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
   return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
   <div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
@@ -308,10 +305,11 @@ function dash(){
 function monthly(){
   const ds=daysIn(month);
   if(!ds.length)return`<div class="card"><div class="empty">No data for this month.</div></div>`;
-  const A={},allAgents=new Set(),dList={};
+  const A={},allAgents=new Set(),dList={},tkTot={};
   ds.forEach(d=>agentsOf(d).forEach(n=>{
     allAgents.add(n);
     const o=calc(d,n);
+    const tk=rcnt(o);if(tk>0){tkTot[n]=(tkTot[n]||0)+tk;if(!o.recvV||exd(d,n,'recv')){dList[n]=dList[n]||[];dList[n].push({date:dmy(d),type:'Talking (0–3 sec)',detail:tk+' call'+(tk>1?'s':'')+(o.rt.length?': '+o.rt.join(', '):''),t:'recv',info:true})}}
     viol(d,o).forEach(v=>{
       if(!exd(d,n,v.t)){
         A[n]=A[n]||{total:0,types:{late:0,brk:0,work:0,cna:0,emerg:0},rawTypes:{}};
@@ -337,7 +335,7 @@ function monthly(){
   const alphaAgents=[...sortedAgents].sort((a,b)=>a.name.localeCompare(b.name));
 
   const mxV=Math.max(1,...sortedAgents.map(a=>a.total));
-  const TN={late:'Late',brk:'Break',work:'Work',cna:'CNA',emerg:'Emergency',appt:'Appt.',lbrk:'Break last 15',lwork:'Work last 5',recv:'Talking >8'};
+  const TN={late:'Late',brk:'Break',work:'Work',cna:'CNA',emerg:'Emergency',appt:'Appt.',lbrk:'Break last 15',lwork:'Work last 5',recv:'Talking (0–3 sec)'};
   const why=a=>Object.entries(a.raw).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).slice(0,2).map(x=>(TN[x[0]]||x[0])+' ×'+x[1]).join(' · ')||'No violations';
   const tRow=(a,i,k)=>`<div class="tp-row"><span class="tp-rank ${k}">${k==='best'?['🥇','🥈','🥉'][i]:i+1}</span><div class="tp-main"><div class="tp-nm">${esc(a.name)}</div><div class="tp-sub">${why(a)}</div><div class="tp-bar"><i class="${k}" style="width:${a.total?Math.max(6,a.total/mxV*100):0}%"></i></div></div><div class="tp-cnt ${k}">${a.total}</div></div>`;
   const tCard=(k,ico,ttl,sub,list)=>`<div class="tp-card ${k}"><div class="tp-hd"><span>${ico}</span><div><b>${ttl}</b><small>${sub}</small></div></div>${list.length?list.map((a,i)=>tRow(a,i,k)).join(''):'<div class="tag">No agents</div>'}</div>`;
@@ -354,21 +352,21 @@ function monthly(){
       <td class="c">${renderCell(a.raw.emerg||0)}</td>
       <td class="c">${renderCell(a.raw.appt||0)}</td>
       <td class="c">${renderCell((a.raw.lbrk||0)+(a.raw.lwork||0))}</td>
-      <td class="c">${renderCell(a.raw.recv||0)}</td>
+      <td class="c" title="Total calls 0–3 sec this month · days over the limit: ${a.raw.recv||0}">${tkTot[a.name]?`<span class="${a.raw.recv?'received-high':''}" style="padding:2px 9px;border-radius:6px;font-weight:700">${tkTot[a.name]}</span>`:'<span style="color:var(--mut)">0</span>'}</td>
       <td class="c n">${a.total>0?`<span class="v-badge">${a.total}</span>`:`<span class="ok-badge">0</span>`}</td>
     </tr>`;
   }).join('');
 
   const selectedAgent=window.MONTH_SELECTED_AGENT||(alphaAgents[0]?alphaAgents[0].name:'');
   const agentLogs=(dList[selectedAgent]||[]);
-  const sumT=(A[selectedAgent]?A[selectedAgent].rawTypes:{});
+  const sumT=Object.assign({},A[selectedAgent]?A[selectedAgent].rawTypes:{});if(tkTot[selectedAgent])sumT.recv=tkTot[selectedAgent];
   const LT=(window.LK_T&&sumT[window.LK_T])?window.LK_T:'';
   const logsF=LT?agentLogs.filter(l=>l.t===LT):agentLogs;
   const chipsHtml=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px"><button class="lkc ${LT?'':'on'}" data-lt="">All · ${agentLogs.length}</button>${Object.entries(sumT).filter(x=>x[1]>0).map(x=>`<button class="lkc ${LT===x[0]?'on':''}" data-lt="${x[0]}">${TN[x[0]]||x[0]} ×${x[1]}</button>`).join('')}</div>`;
   const detailRows=agentLogs.filter(l=>!(window.LK_T&&sumT[window.LK_T])||l.t===window.LK_T).map(l=>`
     <tr style="transition:background 0.2s">
       <td style="padding:6px 12px;border-bottom:1px solid var(--bd);font-weight:500">${l.date}</td>
-      <td style="padding:6px 12px;border-bottom:1px solid var(--bd);color:var(--pri);font-weight:600">${l.type}</td>
+      <td style="padding:6px 12px;border-bottom:1px solid var(--bd);color:${l.info?'var(--mut)':'var(--pri)'};font-weight:600">${l.type}${l.info?' <span class="tag">info</span>':''}</td>
       <td style="padding:6px 12px;border-bottom:1px solid var(--bd);color:var(--mut);white-space:normal;word-break:break-word">${l.detail}</td>
     </tr>`).join('')||'<tr><td colspan=3 class="empty" style="padding:20px;text-align:center;color:var(--mut)">No unexcused violations for this agent</td></tr>';
 
@@ -397,7 +395,7 @@ function monthly(){
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">EMERGENCY</th>
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">APPOINTMENT</th>
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">RESTRICTED TIME</th>
-          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">TALKING &gt;8</th>
+          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">TALKING (0–3s)</th>
           <th style="padding:10px 14px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">TOTAL REAL VIOLATIONS</th>
         </tr>
       </thead>
