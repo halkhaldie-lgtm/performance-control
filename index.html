@@ -154,7 +154,7 @@ function importFile(f){
     const apply=async(keep,mode)=>{for(const d of keep){
         let data=ag[d],tag='Import';const had=S.idx[d];
         if(mode==='merge'&&had){await loadMonth(d.slice(0,7));const old=S.days[d]||{},add=Object.keys(ag[d]).filter(n=>!old[n]);if(!add.length)continue;data=Object.assign({},ag[d],old);tag='Import (new agents only, +'+add.length+')'}
-        S.days[d]=data;S.idx[d]={a:Object.keys(data).length,t:Date.now(),f:(mode==='merge'&&had?(had.f?had.f+' + ':'')+(f.name||'file'):f.name||''),p:had?had.p||0:0};
+        S.days[d]=data;S.idx[d]={a:Object.keys(data).length,t:Date.now(),f:(mode==='merge'&&had?(had.f?had.f+' + ':'')+(f.name||'file'):f.name||''),p:had?had.p||0:0,v:(mode==='merge'&&had)?(had.v||1):2};
         await saveDay(d);logA(tag,dmy(d)+' \u00b7 '+(f.name||'file')+' \u00b7 '+S.idx[d].a+' agents')}
       if(keep.length){await saveIdx();date=(WANT&&keep.includes(WANT))?WANT:keep[keep.length-1];month=date.slice(0,7);tab='dash'}WANT=null;render()};
     if(dup.length)ask(dup,ag,apply,ds);else apply(ds,'replace');
@@ -294,7 +294,9 @@ function dash(){
     <td>${o.lbrkV?rchip(date,o,'lbrk','Break '+o.lbrk[0]):''}${o.lworkV?rchip(date,o,'lwork','Work '+o.lwork[0]):''}${o.lbrkV||o.lworkV?'':'<span class="tag">—</span>'}</td>
     <td${o.outNext?' title="Logout taken from the next day\'s report"':''}>${formatTimeOut(o.out)}</td>${cell(date,o,'recv',o.recvV,rcnt(o),'received-high',o.rt.join(', '))}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
-  return`<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
+  const old=S.idx[date]&&(S.idx[date].v||1)<2;
+  const oldBanner=old?`<div class="card" style="padding:12px 16px;margin-bottom:12px;background:var(--amb);border-color:transparent;color:var(--ambt);display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px"><b>This date was saved with an older version.</b> Talking and Appointment confirmation need the report to be imported again.</span>${USER_ROLE!=='viewer'?'<button class="b p" id="reimp">Re-import this date</button>':''}</div>`:'';
+  return`${oldBanner}<div style="margin-bottom:12px;font-weight:700;font-size:15px;color:var(--pri)">📅 Report Date: ${dmy(date)}</div>
   <div class="kpis"><div class="k"><b>${names.length}</b><span>Agents</span></div>
   <div class="k"><b>${ct(o=>o.lateV)}</b><span>Late arrivals</span></div>
   <div class="k"><b>${ct(o=>o.emV)}</b><span>Emergency</span></div>
@@ -694,6 +696,7 @@ document.addEventListener('click',e=>{const t=e.target,id=t.id,x=t.closest('[dat
   else if(id==='mn-del')delMan();
   else if(id==='ex-add'){const v=($('#ex-in').value||'').trim().replace(/\s+/g,' ');if(!v)return;S.cfg=S.cfg||{exempt:[]};if(!S.cfg.exempt.some(n=>nz(n)===nz(v))){S.cfg.exempt.push(v);saveCfg();logA('Exempt agent added',v)}render()}
   else if(xd){const i=+xd.dataset.exdel,n=S.cfg.exempt[i];S.cfg.exempt.splice(i,1);saveCfg();logA('Exempt agent removed',n);render()}});
+document.addEventListener('click',e=>{if(e.target.id==='reimp'){WANT=date;pickFile();return}});
 document.addEventListener('click',e=>{const t=e.target,a=t.closest('[data-aedit]'),d=t.closest('[data-adel]'),l=t.closest('[data-lt]'),c=t.closest('[data-lc]');
   if(a)openMan(a.dataset.aedit);
   else if(d)delAgent(d.dataset.adel);
