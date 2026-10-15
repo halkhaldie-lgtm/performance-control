@@ -145,7 +145,7 @@ function importFile(f){
       else if(/^logout/i.test(st))ev=[t[1],'O',re,0];
       else if(/^ready/i.test(st)){if(!seenR[k]){seenR[k]=1;ev=[t[1],'R','',0]}}
       else if(/^not ready/i.test(st)&&/^(break|work)$|no answer|appointment/i.test(re))ev=[t[1],'N',re,d];
-      else if(/^(reserved|receiv)/i.test(st)&&d<=10)ev=[t[1],'V','',d];
+      else if(/^talking/i.test(st)&&d<=3)ev=[t[1],'T','',d];
       if(!ev)return;(ag[t[0]]=ag[t[0]]||{});(ag[t[0]][name]=ag[t[0]][name]||[]).push(ev)});
     const ds=Object.keys(ag);if(!ds.length){alert('No valid rows');return}
     ds.sort();
@@ -162,7 +162,7 @@ function importFile(f){
 
 let WANT=null;
 const exOn=v=>v===1||!!(v&&v.e===1);
-const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer',appt:'Appointment confirmation >2 min',lbrk:'Break in last 15 min',lwork:'Work in last 5 min',recv:'Received over 8 (1–2 sec)'};
+const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer',appt:'Appointment confirmation >2 min',lbrk:'Break in last 15 min',lwork:'Work in last 5 min',recv:'Talking over 8 (0–3 sec)'};
 function openNote(k){
   const [d,n,t]=k.split('|'),cur=S.ex[k],on=exOn(cur),note=(cur&&cur.n)||'';
   const m=document.createElement('div');m.id='mdl';m.dataset.k=k;m.style.cssText=MS;
@@ -177,7 +177,7 @@ function saveNote(excused){const m=document.getElementById('mdl');if(!m)return;c
   if(!excused&&!note)delete S.ex[k];else S.ex[k]={e:excused?1:0,n:note,by:MEN,t:Date.now()};
   persistMap('ex',k);logA(excused?(was?'Excused (note updated)':'Excuse'):(note?'Note':'Restore violation'),k.split('|').reverse().join(' \u00b7 ')+(note?' \u2014 '+note:''));
   m.remove();render()}
-const rcnt=o=>(o.recv[1]||0)+(o.recv[2]||0);
+const rcnt=o=>[0,1,2,3].reduce((a,k)=>a+(o.recv[k]||0),0);
 const MS='position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px';
 const adj=m=>{const y=+m.slice(0,4),k=+m.slice(5),f=(a,b)=>a+'-'+pad(b);return[m,k===1?f(y-1,12):f(y,k-1),k===12?f(y+1,1):f(y,k+1)]};
 function pickFile(){const i=document.createElement('input');i.type='file';i.accept='.xlsx,.xls';i.onchange=()=>{if(i.files[0])importFile(i.files[0])};i.click()}
@@ -220,7 +220,7 @@ function manualCalc(dt,name,m){
   const ref=first!=null?first:login,late=ref!=null&&shift?Math.max(0,ref-shift):0;let out=tosec(m.out);if(out!=null&&m.outNext)out+=86400;
   return finish({name,login:login||0,shift,hasLogin:login!=null,auto:false,first:ref,late,lateV:late>LIM.grace,
     em:{n:m.emN||0,s:(m.emM||0)*60},brk:(m.brk||0)*60,work:(m.work||0)*60,cna:m.cna||0,out,recv:{1:m.recv||0},rt:[],
-    appt:m.appt||0,apptT:[],emT:[],lbrk:m.lbrk?['manual']:[],lwork:m.lwork?['manual']:[],manual:true,note:m.note||''})}
+    appt:m.appt||0,apptT:[],emT:[],emShort:[],lbrk:m.lbrk?['manual']:[],lwork:m.lwork?['manual']:[],manual:true,note:m.note||''})}
 function calc(dt,name){
   if(S.man[dt+'|'+name])return manualCalc(dt,name,S.man[dt+'|'+name]);
   const ev=getEvents(dt,name);
@@ -230,17 +230,19 @@ function calc(dt,name){
   const targetCheckTime=li?(fr?fr[0]:login):null; // no login that day = shift started the previous day: no lateness
   const late=targetCheckTime!=null?Math.max(0,targetCheckTime-shift):0;
   const o={name,login,shift,hasLogin:!!li,auto:sh==null,first:targetCheckTime,late,lateV:late>LIM.grace,
-    em:{n:0,s:0},brk:0,work:0,cna:0,out:null,recv:{},rt:[],appt:0,apptT:[],emT:[],lbrk:[],lwork:[]};
+    em:{n:0,s:0},brk:0,work:0,cna:0,out:null,recv:{},rt:[],appt:0,apptT:[],emT:[],emShort:[],lbrk:[],lwork:[]};
   ev.forEach((e,i)=>{
-    if(e[1]==='O'){if(li&&e[0]<login)return;const nx=ev.slice(i+1).find(x=>x[1]==='I');
-      if(!nx){o.out=e[0];if(/emergency/i.test(e[2])){o.em.n++;o.emT.push(hms(e[0])+' → no return today')}return}
-      const g=nx[0]-e[0];if(g>LIM.emerg&&/emergency/i.test(e[2])){o.em.n++;o.em.s+=g;o.emT.push(hms(e[0])+' → '+hms(nx[0])+' ('+formatDuration(mn(g))+')')}}
+    if(e[1]==='O'){if(li&&e[0]<login)return;const nx=ev.slice(i+1).find(x=>x[1]==='I'),isEm=/emergency/i.test(e[2]);
+      if(!nx){o.out=e[0];if(isEm){o.em.n++;o.emT.push(hms(e[0])+' → no return today')}return}
+      if(isEm){const nl=ev.slice(i+1).find(x=>x[1]==='O'),nr=ev.slice(i+1).find(x=>x[1]==='R'&&x[0]>=nx[0]);
+        const end=(nr&&!(nl&&nl[0]<nr[0]))?nr[0]:nx[0],g=end-e[0];
+        o.em.n++;o.em.s+=g;o.emT.push(hms(e[0])+' → '+hms(end)+' ('+emDur(g)+')')}}
     else if(e[1]==='N'){const endS=shift+LIM.shift;
       if(/^break/i.test(e[2])){o.brk+=e[3];if(li&&e[0]>=endS-LIM.lastBrk&&e[0]<=endS)o.lbrk.push(hms(e[0]))}
       else if(/^work$/i.test(e[2])){o.work+=e[3];if(li&&e[0]>=endS-LIM.lastWork&&e[0]<=endS)o.lwork.push(hms(e[0]))}
       else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++;
       else if(/appointment/i.test(e[2])&&e[3]>LIM.appt){o.appt++;o.apptT.push(hms(e[0])+' ('+formatDuration(mn(e[3]))+')')}}});
-  rawEv(dt,name).forEach(e=>{if(e[1]==='V'){o.recv[e[3]]=(o.recv[e[3]]||0)+1;if(e[3]<3)o.rt.push(hms(e[0])+' ('+e[3]+'s)')}});
+  rawEv(dt,name).forEach(e=>{if(e[1]==='T'){o.recv[e[3]]=(o.recv[e[3]]||0)+1;o.rt.push(hms(e[0])+' ('+e[3]+'s)')}});
   return finish(o)}
 
 const ek=(d,n,t)=>d+'|'+n+'|'+t;
@@ -255,10 +257,13 @@ function viol(dt,o){
   if(o.apptV)v.push({t:'appt',l:'Appointment confirmation >2 min',v:o.apptT.length?o.apptT.join(', '):o.appt+' call(s)'});
   if(o.lbrkV)v.push({t:'lbrk',l:'Break in last 15 min',v:o.lbrk.join(', ')});
   if(o.lworkV)v.push({t:'lwork',l:'Work in last 5 min',v:o.lwork.join(', ')});
-  if(o.recvV)v.push({t:'recv',l:'Received over '+LIM.recv+' (1–2 sec)',v:rcnt(o)+' calls'+(o.rt.length?': '+o.rt.join(', '):'')});
+  if(o.recvV)v.push({t:'recv',l:'Talking over '+LIM.recv+' (0–3 sec)',v:rcnt(o)+' calls'+(o.rt.length?': '+o.rt.join(', '):'')});
   return v}
-const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Received >8']];
+const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Talking >8']];
 
+const emDur=g=>g<60?g+' sec':formatDuration(mn(g));
+const emTxt=o=>o.em.n?o.em.n+' / '+emDur(o.em.s):'0';
+const emTip=o=>o.emT.join(' · ');
 const mcell=(txt,tip)=>`<td class="c ok"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
 function cell(dt,o,t,bad,txt,cls,tip){
   if(!bad)return`<td class="c ok"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
@@ -284,7 +289,7 @@ function dash(){
     <td>${o.hasLogin?`<input class="t" type="time" data-sh="${o.name}" value="${hms(o.shift).slice(0,5)}">`:'<span class="tag">Prev. day</span>'}</td>
     <td>${o.hasLogin?hms(o.login):'Prev. day'}</td><td>${o.first!=null?hms(o.first):'—'}</td>
     ${cell(date,o,'late',o.lateV,formatDuration(mn(o.late)))}
-    ${o.exempt?mcell(o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',o.em.n?'Exempt – not counted: '+o.emT.join(' · '):''):cell(date,o,'emerg',o.emV,o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0','v',o.emT.join(' · '))}
+    ${o.exempt?mcell(emTxt(o),emTip(o)?'Exempt – not counted: '+emTip(o):''):cell(date,o,'emerg',o.emV,emTxt(o),'v',emTip(o))}
     ${cell(date,o,'brk',o.brkV,formatDuration(mn(o.brk)))}
     ${o.exempt?mcell(formatDuration(mn(o.work)),'Exempt – not counted'):cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
     ${cell(date,o,'cna',o.cna,o.cna)}
@@ -297,8 +302,8 @@ function dash(){
   <div class="k"><b>${ct(o=>o.lateV)}</b><span>Late arrivals</span></div>
   <div class="k"><b>${ct(o=>o.emV)}</b><span>Emergency</span></div>
   <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
-  <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((a,o)=>a+rcnt(o),0)}</b><span>Received (1,2 sec)</span></div><div class="k"><b>${ct(o=>o.apptV)}</b><span>Appointment >2 min</span></div><div class="k"><b>${ct(o=>o.lbrkV||o.lworkV)}</b><span>Restricted time</span></div></div>
-  <div class="card"><table class="dt"><thead><tr><th>Agent</th><th></th><th>Shift start</th><th>Login</th><th>First active</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Appt. confirm &gt;2 min</th><th title="Break in the last 15 min or Work in the last 5 min of the shift">Restricted time</th><th>Logout time</th><th class="c">Received</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
+  <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((a,o)=>a+rcnt(o),0)}</b><span>Talking (0–3 sec)</span></div><div class="k"><b>${ct(o=>o.apptV)}</b><span>Appointment >2 min</span></div><div class="k"><b>${ct(o=>o.lbrkV||o.lworkV)}</b><span>Restricted time</span></div></div>
+  <div class="card"><table class="dt"><thead><tr><th>Agent</th><th></th><th>Shift start</th><th>Login</th><th>First active</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Appt. confirm &gt;2 min</th><th title="Break in the last 15 min or Work in the last 5 min of the shift">Restricted time</th><th>Logout time</th><th class="c">Talking</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
 
 function monthly(){
   const ds=daysIn(month);
@@ -332,7 +337,7 @@ function monthly(){
   const alphaAgents=[...sortedAgents].sort((a,b)=>a.name.localeCompare(b.name));
 
   const mxV=Math.max(1,...sortedAgents.map(a=>a.total));
-  const TN={late:'Late',brk:'Break',work:'Work',cna:'CNA',emerg:'Emergency',appt:'Appt.',lbrk:'Break last 15',lwork:'Work last 5',recv:'Received >8'};
+  const TN={late:'Late',brk:'Break',work:'Work',cna:'CNA',emerg:'Emergency',appt:'Appt.',lbrk:'Break last 15',lwork:'Work last 5',recv:'Talking >8'};
   const why=a=>Object.entries(a.raw).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).slice(0,2).map(x=>(TN[x[0]]||x[0])+' ×'+x[1]).join(' · ')||'No violations';
   const tRow=(a,i,k)=>`<div class="tp-row"><span class="tp-rank ${k}">${k==='best'?['🥇','🥈','🥉'][i]:i+1}</span><div class="tp-main"><div class="tp-nm">${esc(a.name)}</div><div class="tp-sub">${why(a)}</div><div class="tp-bar"><i class="${k}" style="width:${a.total?Math.max(6,a.total/mxV*100):0}%"></i></div></div><div class="tp-cnt ${k}">${a.total}</div></div>`;
   const tCard=(k,ico,ttl,sub,list)=>`<div class="tp-card ${k}"><div class="tp-hd"><span>${ico}</span><div><b>${ttl}</b><small>${sub}</small></div></div>${list.length?list.map((a,i)=>tRow(a,i,k)).join(''):'<div class="tag">No agents</div>'}</div>`;
@@ -392,7 +397,7 @@ function monthly(){
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">EMERGENCY</th>
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">APPOINTMENT</th>
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">RESTRICTED TIME</th>
-          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">RECEIVED &gt;8</th>
+          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">TALKING &gt;8</th>
           <th style="padding:10px 14px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">TOTAL REAL VIOLATIONS</th>
         </tr>
       </thead>
@@ -470,7 +475,7 @@ const nv=o=>viol(date,o).filter(v=>!exd(date,o.name,v.t)).length;
 const nvForDate=(dt,o)=>viol(dt,o).filter(v=>!exd(dt,o.name,v.t)).length;
 
 const EC={navy:'FF0F1C3F',hd:'FF1E3A8A',pri:'FF1D4ED8',red:'FFFDE8E8',redt:'FFB91C1C',amb:'FFFFF4D6',ambt:'FF92400E',grn:'FFE3F6EA',grnt:'FF15803D',bd:'FFE1E6EF',wh:'FFFFFFFF',mut:'FF6B7791'};
-const RH=['Agent Name','Shift Start','Login Time','First Active','Late Arrival','Emergency','Break Total','Work Total','Call No Ans','Appt. Confirm >2m','Restricted Time','Logout Time','Received','Status'];
+const RH=['Agent Name','Shift Start','Login Time','First Active','Late Arrival','Emergency','Break Total','Work Total','Call No Ans','Appt. Confirm >2m','Restricted Time','Logout Time','Talking','Status'];
 const RW=[26,12,12,12,13,15,13,13,12,15,22,16,11,12];
 const NC=RH.length,NF=8,FLCOL=[5,6,7,8,9,10,11,13]; // visible columns / flag columns (late,emerg,brk,work,cna,appt,restricted)
 const colL=n=>String.fromCharCode(64+n); // 1->A
@@ -484,7 +489,7 @@ function repRow(d,o){
   const lv=[['lbrk',o.lbrkV],['lwork',o.lworkV]].filter(x=>x[1]),open=lv.some(x=>!exd(d,o.name,x[0]));
   const rs=[o.lbrkV?'Break '+o.lbrk[0]:'',o.lworkV?'Work '+o.lwork[0]:''].filter(Boolean).join(' · ')||'—';
   return{d,vals:[o.name,o.hasLogin?hms(o.shift):'Prev. day',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'—',
-    formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+formatDuration(mn(o.em.s)):'0',formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,o.appt,rs,
+    formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+emDur(o.em.s):'0',formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,o.appt,rs,
     formatTimeOut(o.out),rcnt(o),n?n+' open':'Clean'],
     fl:[f(o.lateV,'late'),f(o.emV,'emerg'),f(o.brkV,'brk'),f(o.workV,'work'),f(o.cna,'cna'),f(o.apptV,'appt'),open?1:(lv.length?2:0),f(o.recvV,'recv')]}}
 
@@ -536,7 +541,7 @@ async function exportReport(dates,mode){
     const ls=wb.addWorksheet('Lists');ls.getColumn(1).numFmt='@';ls.getColumn(1).width=14;ls.getCell('A1').value='Dates';ls.getCell('A1').font=EF({bold:true});
     dates.forEach((d,i)=>{ls.getCell(i+2,1).value=dmy(d)});
     const ds=wb.addWorksheet('Data');
-    const DH=['Date',...RH,'Flag Late','Flag Emerg','Flag Break','Flag Work','Flag CNA','Flag Appt','Flag Restricted','Flag Received','Match','Pos'];
+    const DH=['Date',...RH,'Flag Late','Flag Emerg','Flag Break','Flag Work','Flag CNA','Flag Appt','Flag Restricted','Flag Talking','Match','Pos'];
     DH.forEach((h,i)=>{const c=ds.getCell(1,i+1);c.value=h;c.font=EF({bold:true,color:{argb:EC.wh}});c.fill=fillOf(i<NC+1?EC.hd:EC.mut);c.alignment={horizontal:'center',vertical:'middle',wrapText:true}});
     ds.getColumn(1).numFmt='@';ds.getColumn(1).width=13;ds.getColumn(2).width=26;for(let i=3;i<MC;i++)ds.getColumn(i).width=13;
     ds.getColumn(MC).hidden=true;ds.getColumn(PC).hidden=true;ds.views=[{state:'frozen',ySplit:1}];
@@ -671,7 +676,7 @@ function openMan(name){
   ${f('mn-brk','Break total (min)',r.brk,'number')}${f('mn-work','Work total (min)',r.work,'number')}
   ${f('mn-emn','Emergency (count)',r.emN,'number')}${f('mn-emm','Emergency (minutes)',r.emM,'number')}
   ${f('mn-cna','Call no answer (count)',r.cna,'number')}${f('mn-appt','Appointment confirmations >2 min (count)',r.appt,'number')}
-  ${f('mn-recv','Received 1–2 sec (count)',r.recv,'number')}${ck('mn-outn','Logout is on the next day',r.outNext)}
+  ${f('mn-recv','Talking 0–3 sec (count)',r.recv,'number')}${ck('mn-outn','Logout is on the next day',r.outNext)}
   ${ck('mn-lb','Break in the last 15 min of the shift',r.lbrk)}${ck('mn-lw','Work in the last 5 min of the shift',r.lwork)}
   <label class="tag" style="grid-column:1/-1;display:grid;gap:3px">Note<textarea id="mn-note" rows="2" style="width:100%;font:inherit;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)">${esc(r.note||'')}</textarea></label></div>
   ${hasEv?'<p class="hint" style="margin-top:10px">This agent has report data for this date. Saving overrides it until you delete the manual entry.</p>':''}
