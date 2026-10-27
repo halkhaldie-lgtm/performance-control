@@ -60,9 +60,13 @@ table.dt{min-width:0}table.dt th,table.dt td{padding:8px 7px}table.dt th{white-s
 .lg-b.imp{background:#dbeafe;color:#1d4ed8}.lg-b.exc{background:var(--grn);color:var(--grnt)}.lg-b.man{background:#ede9fe;color:#6d28d9}.lg-b.del{background:var(--red);color:var(--redt)}.lg-b.set{background:var(--amb);color:var(--ambt)}.lg-b.usr{background:#e0f2fe;color:#0369a1}
 .lg-u{display:flex;align-items:center;gap:6px;color:var(--mut);font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.lg-u i{font-style:normal;flex:none;width:20px;height:20px;border-radius:50%;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
 @media(max-width:760px){.lg-row{grid-template-columns:48px 1fr}.lg-row .lg-d,.lg-row .lg-u{grid-column:2}}
+thead th{background:#1e3a8a;color:#eef3ff;font-weight:700;letter-spacing:.6px;border-bottom:3px solid #60a5fa}
+thead th:first-child{border-top-left-radius:10px}thead th:last-child{border-top-right-radius:10px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) thead th{background:#152447;border-bottom-color:#3b82f6}}
+:root[data-theme="dark"] thead th{background:#152447;border-bottom-color:#3b82f6}
 </style></head><body>
 <header><h1>Performance Contact Center<small>Agent attendance &amp; conduct monitoring</small></h1>
-<nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
+<nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="pw">🔑 Password</button><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
 <main id="app"></main>
 <script>
 const LIM={grace:300,emerg:180,brk:43*60,work:300,cna:6,shift:8*3600,appt:120,lastBrk:900,lastWork:300,recv:6};
@@ -216,7 +220,7 @@ function manualCalc(dt,name,m){
   const ref=first!=null?first:login,late=ref!=null&&shift?Math.max(0,ref-shift):0;let out=tosec(m.out);if(out!=null&&m.outNext)out+=86400;
   return finish({name,login:login||0,shift,hasLogin:login!=null,auto:false,first:ref,late,lateV:late>LIM.grace,
     em:{n:m.emN||0,s:(m.emM||0)*60},brk:(m.brk||0)*60,work:(m.work||0)*60,cna:m.cna||0,out,recv:{1:m.recv||0},rt:[],
-    appt:m.appt||0,apptT:[],emT:[],emShort:[],lbrk:m.lbrk?['manual']:[],lwork:m.lwork?['manual']:[],manual:true,note:m.note||''})}
+    appt:m.appt||0,apptT:[],emT:[],emShort:[],lbrk:m.lbrk?['manual']:[],lbrkD:[],lworkD:[],lwork:m.lwork?['manual']:[],manual:true,note:m.note||''})}
 function calc(dt,name){
   if(S.man[dt+'|'+name])return manualCalc(dt,name,S.man[dt+'|'+name]);
   const ev=getEvents(dt,name);
@@ -226,7 +230,7 @@ function calc(dt,name){
   const targetCheckTime=li?(fr?fr[0]:login):null; // no login that day = shift started the previous day: no lateness
   const late=targetCheckTime!=null?Math.max(0,targetCheckTime-shift):0;
   const o={name,login,shift,hasLogin:!!li,auto:sh==null,first:targetCheckTime,late,lateV:late>LIM.grace,
-    em:{n:0,s:0},brk:0,work:0,cna:0,out:null,recv:{},rt:[],appt:0,apptT:[],emT:[],emShort:[],lbrk:[],lwork:[]};
+    em:{n:0,s:0},brk:0,work:0,cna:0,out:null,recv:{},rt:[],appt:0,apptT:[],emT:[],emShort:[],lbrk:[],lwork:[],lbrkD:[],lworkD:[]};
   ev.forEach((e,i)=>{
     if(e[1]==='O'){if(li&&e[0]<login)return;const nx=ev.slice(i+1).find(x=>x[1]==='I'),isEm=/emergency/i.test(e[2]);
       if(!nx){o.out=e[0];if(isEm){o.em.n++;o.emT.push(hms(e[0])+' → no return today')}return}
@@ -234,8 +238,8 @@ function calc(dt,name){
         const end=(nr&&!(nl&&nl[0]<nr[0]))?nr[0]:nx[0],g=end-e[0];
         o.em.n++;o.em.s+=g;o.emT.push(hms(e[0])+' → '+hms(end)+' ('+emDur(g)+')')}}
     else if(e[1]==='N'){const endS=shift+LIM.shift;
-      if(/^break/i.test(e[2])){o.brk+=e[3];if(li&&e[0]>=endS-LIM.lastBrk&&e[0]<=endS)o.lbrk.push(hms(e[0]))}
-      else if(/^work$/i.test(e[2])){o.work+=e[3];if(li&&e[0]>=endS-LIM.lastWork&&e[0]<=endS)o.lwork.push(hms(e[0]))}
+      if(/^break/i.test(e[2])){o.brk+=e[3];if(li&&e[0]>=endS-LIM.lastBrk&&e[0]<=endS){o.lbrk.push(hms(e[0]));o.lbrkD.push(e[3])}}
+      else if(/^work$/i.test(e[2])){o.work+=e[3];if(li&&e[0]>=endS-LIM.lastWork&&e[0]<=endS){o.lwork.push(hms(e[0]));o.lworkD.push(e[3])}}
       else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++;
       else if(/appointment/i.test(e[2])&&e[3]>LIM.appt){o.appt++;o.apptT.push(hms(e[0])+' ('+formatDuration(mn(e[3]))+')')}}});
   if(o.out==null&&li&&isOpen(dt,name)){const t=rawEv(addDays(dt,1),name).find(x=>x[1]==='O'&&/end\s*of\s*shift/i.test(x[2]));if(t){o.out=t[0]+86400;o.outNext=true}}
@@ -252,8 +256,8 @@ function viol(dt,o){
   if(o.workV)v.push({t:'work',l:'Work overrun',v:formatDuration(mn(o.work-LIM.work))+' over'});
   if(o.cna)v.push({t:'cna',l:'Call No Answer',v:o.cna+' call(s)'});
   if(o.apptV)v.push({t:'appt',l:'Appointment confirmation >2 min',v:o.apptT.length?o.apptT.join(', '):o.appt+' call(s)'});
-  if(o.lbrkV)v.push({t:'lbrk',l:'Break in last 15 min',v:o.lbrk.join(', ')});
-  if(o.lworkV)v.push({t:'lwork',l:'Work in last 5 min',v:o.lwork.join(', ')});
+  if(o.lbrkV)v.push({t:'lbrk',l:'Break in last 15 min',v:restrList(o.lbrk,o.lbrkD)});
+  if(o.lworkV)v.push({t:'lwork',l:'Work in last 5 min',v:restrList(o.lwork,o.lworkD)});
   if(o.recvV)v.push({t:'recv',l:'Talking over '+LIM.recv+' (0–3 sec)',v:rcnt(o)+' calls'+(o.rt.length?': '+o.rt.join(', '):'')});
   return v}
 const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Talking (0–3 sec)']];
@@ -261,12 +265,15 @@ const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],
 const emDur=g=>g<60?g+' sec':formatDuration(mn(g));
 const emTxt=o=>o.em.n?o.em.n+' / '+emDur(o.em.s):'0';
 const emTip=o=>o.emT.join(' · ');
+const durFull=s=>{s=Math.round(s);if(s<60)return s+' sec';const h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60;return (h?h+' h ':'')+(m?m+' min':'')+(r?(m||h?' ':'')+r+' sec':'')};
+const restrList=(ts,ds)=>ts.map((t,i)=>t==='manual'?'entered manually':t+(ds[i]!=null?' ('+durFull(ds[i])+')':'')).join(', ');
+const restrTip=(label,ts,ds)=>ts.map((t,i)=>t==='manual'?label+' entered manually':label+' · started '+t+(ds[i]!=null?' · lasted '+durFull(ds[i]):'')).join('\n');
 const mcell=(txt,tip)=>`<td class="c ok"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
 function cell(dt,o,t,bad,txt,cls,tip){
   if(!bad)return`<td class="c ok"${tip?` title="${esc(tip)}"`:''}>${txt}</td>`;
   const c=S.ex[ek(dt,o.name,t)],x=exOn(c),nt=c&&c.n,tt=nt||tip||'';
   return`<td class="c ${x?'x':cls||'v'}" data-ex="${dt}|${o.name}|${t}"${tt?` title="${esc(tt)}"`:''}>${txt}${nt?' 📝':''}</td>`}
-const rchip=(dt,o,t,txt)=>{const c=S.ex[ek(dt,o.name,t)],x=exOn(c),nt=c&&c.n;return`<span class="chip ${x?'good':'bad'}" data-ex="${dt}|${o.name}|${t}" style="cursor:pointer;margin-right:4px;${x?'text-decoration:line-through':''}"${nt?` title="${esc(nt)}"`:''}>${txt}${nt?' 📝':''}</span>`};
+const rchip=(dt,o,t,txt,tip)=>{const c=S.ex[ek(dt,o.name,t)],x=exOn(c),nt=c&&c.n,tt=[tip,nt?'Note: '+nt:''].filter(Boolean).join('\n');return`<span class="chip ${x?'good':'bad'}" data-ex="${dt}|${o.name}|${t}" style="cursor:pointer;margin-right:4px;${x?'text-decoration:line-through':''}"${tt?` title="${esc(tt)}"`:''}>${txt}${nt?' 📝':''}</span>`};
 
 function formatTimeOut(ts){
   if(ts==null)return'—';
@@ -291,7 +298,7 @@ function dash(){
     ${o.exempt?mcell(formatDuration(mn(o.work)),'Exempt – not counted'):cell(date,o,'work',o.workV,formatDuration(mn(o.work)))}
     ${cell(date,o,'cna',o.cna,o.cna)}
     ${o.exempt?mcell(o.appt,o.appt?'Exempt – not counted: '+o.apptT.join(', '):''):cell(date,o,'appt',o.apptV,o.appt,'v',o.apptT.join(', '))}
-    <td>${o.lbrkV?rchip(date,o,'lbrk','Break '+o.lbrk[0]):''}${o.lworkV?rchip(date,o,'lwork','Work '+o.lwork[0]):''}${o.lbrkV||o.lworkV?'':'<span class="tag">—</span>'}</td>
+    <td>${o.lbrkV?rchip(date,o,'lbrk','Break '+o.lbrk[0],restrTip('Break',o.lbrk,o.lbrkD)):''}${o.lworkV?rchip(date,o,'lwork','Work '+o.lwork[0],restrTip('Work',o.lwork,o.lworkD)):''}${o.lbrkV||o.lworkV?'':'<span class="tag">—</span>'}</td>
     <td${o.outNext?' title="Logout taken from the next day\'s report"':''}>${formatTimeOut(o.out)}</td>${cell(date,o,'recv',o.recvV,rcnt(o),'received-high',o.rt.join(', '))}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
   const old=S.idx[date]&&(S.idx[date].v||1)<2;
@@ -375,7 +382,6 @@ function monthly(){
   const dropdownOpts=alphaAgents.map(a=>`<option value="${esc(a.name)}" ${a.name===selectedAgent?'selected':''}>${esc(a.name)}</option>`).join('');
 
   return`
-  <div class="bar"><input type="month" id="mo" value="${month}"></div>
   ${topHtml}
   
   <div style="margin:20px 0 8px;display:flex;align-items:center;justify-content:space-between;">
@@ -428,6 +434,25 @@ function monthly(){
   </div>`;
 }
 
+let USERS_LIST=null;
+async function loadUsersList(){try{const q=await DB.collection('users').get();USERS_LIST=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>String(a.email).localeCompare(String(b.email)))}catch(e){USERS_LIST=[]}}
+function openPwd(){const m=document.createElement('div');m.id='mdl';m.style.cssText=MS;
+  m.innerHTML=`<div class="card" style="padding:22px;width:min(420px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:18px">Change my password</h2><p class="hint" style="margin:0 0 12px">${esc(MEN)}</p>
+  <div style="display:grid;gap:10px"><input id="pw-cur" type="password" placeholder="Current password" autocomplete="current-password"><input id="pw-new" type="password" placeholder="New password (min 6 characters)" autocomplete="new-password"><input id="pw-new2" type="password" placeholder="Repeat the new password" autocomplete="new-password">
+  <div class="bar" style="margin:0"><button class="b p" id="pw-save">Save password</button><button class="b" id="xc">Cancel</button></div><span id="pw-msg" class="tag"></span></div></div>`;
+  document.body.appendChild(m);setTimeout(()=>{const i=$('#pw-cur');if(i)i.focus()},30)}
+async function savePwd(){const g=id=>($('#'+id)||{}).value||'',msg=t=>{const e=$('#pw-msg');if(e){e.textContent=t;e.style.color='var(--redt)'}};
+  const cur=g('pw-cur'),n1=g('pw-new'),n2=g('pw-new2');
+  if(!cur||!n1){msg('Fill in all the fields.');return}
+  if(n1.length<6){msg('The new password must be at least 6 characters.');return}
+  if(n1!==n2){msg('The two new passwords do not match.');return}
+  if(n1===cur){msg('The new password must be different from the current one.');return}
+  const u=firebase.auth().currentUser;if(!u){msg('Please sign in again.');return}
+  const btn=$('#pw-save');if(btn)btn.disabled=true;
+  try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,cur));await u.updatePassword(n1);
+    logA('Password changed','self · '+u.email);const m=document.getElementById('mdl');if(m)m.remove();alert('Password changed successfully.')}
+  catch(e){const c=e.code||'';msg(/wrong-password|invalid-credential|invalid-login/.test(c)?'The current password is incorrect.':/weak-password/.test(c)?'The new password is too weak.':/too-many/.test(c)?'Too many attempts. Try again in a few minutes.':'Could not change the password: '+(e.message||c));if(btn)btn.disabled=false}}
+async function sendReset(email){if(!email)return;try{await firebase.auth().sendPasswordResetEmail(email);logA('Password reset email sent',email);alert('A password reset link was sent to '+email)}catch(e){alert('Could not send the email: '+(e.message||e.code))}}
 function adminPanel(){
   if(USER_ROLE!=='admin')return`<div class="card"><div class="empty">Access Denied. Admins only.</div></div>`;
   return`<div class="card pad" style="max-width:500px;margin:20px auto">
@@ -440,6 +465,10 @@ function adminPanel(){
       <button class="b p" id="nu-btn">Create User</button>
       <span id="nu-msg" style="font-size:12px;color:var(--grnt)"></span>
     </div>
+  </div>
+  <div class="card pad" style="max-width:760px;margin:20px auto"><h2>Users &amp; passwords</h2>
+    <p class="hint">Nobody can see or type another person's password. Use <b>Send reset email</b>: the user receives a link and chooses a new password. Everyone can also change their own password from the <b>🔑 Password</b> button at the top.</p>
+    <div class="card" style="margin:0"><table style="min-width:520px"><thead><tr><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>${(USERS_LIST||[]).map(u=>`<tr><td class="n">${esc(u.email||u.id)}</td><td>${esc(u.role||'')}</td><td>${u.active===false?'<span class="chip bad">Disabled</span>':'<span class="chip good">Active</span>'}</td><td><button class="b" data-pwreset="${esc(u.email||'')}">Send reset email</button></td></tr>`).join('')||'<tr><td colspan=4 class="empty">No users</td></tr>'}</tbody></table></div>
   </div>`;
 }
 
@@ -487,7 +516,7 @@ const BORD=()=>({top:edge(),left:edge(),bottom:edge(),right:edge()});
 function repRow(d,o){
   const f=(bad,t)=>bad?(exd(d,o.name,t)?2:1):0,n=nvForDate(d,o);
   const lv=[['lbrk',o.lbrkV],['lwork',o.lworkV]].filter(x=>x[1]),open=lv.some(x=>!exd(d,o.name,x[0]));
-  const rs=[o.lbrkV?'Break '+o.lbrk[0]:'',o.lworkV?'Work '+o.lwork[0]:''].filter(Boolean).join(' · ')||'—';
+  const rs=[o.lbrkV?'Break '+restrList(o.lbrk,o.lbrkD):'',o.lworkV?'Work '+restrList(o.lwork,o.lworkD):''].filter(Boolean).join(' · ')||'—';
   return{d,vals:[o.name,o.hasLogin?hms(o.shift):'Prev. day',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'—',
     formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+emDur(o.em.s):'0',formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,o.appt,rs,
     formatTimeOut(o.out),rcnt(o),n?n+' open':'Clean'],
@@ -605,12 +634,13 @@ function render(){
   const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
   const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';Promise.all(adj(lm).map(loadMonth)).then(render);return}
   if(tab==='log'&&LOGS===null){(async()=>{if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(200).get();LOGS=q.docs.map(x=>x.data())}catch(e){LOGS=[]}}else LOGS=[];render()})();return}
+  if(tab==='admin'&&USER_ROLE==='admin'&&USERS_LIST===null){loadUsersList().then(render);return}
   const bar=tab==='dash'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button><input id="q" placeholder="Search..." value="${window.Q||''}">${USER_ROLE!=='viewer'?'<button class="b" id="addman" style="margin-left:auto">+ Add agent data</button>':''}<button class="b p" data-exp="1" style="margin-left:${USER_ROLE!=='viewer'?'8px':'auto'}">⬇ Download report</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"></div>`:'';
   $('#app').innerHTML=bar+({dash,mon:monthly,data,log:logv,admin:adminPanel}[tab])();
 }
 
 document.addEventListener('click',e=>{const t=e.target;let x;
-  if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;render()}
+  if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;USERS_LIST=null;render()}
   else if(x=t.closest('[data-ex]')){openNote(x.dataset.ex)}
   else if(x=t.closest('[data-step]')){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+ +x.dataset.step);date=d.toISOString().slice(0,10);render()}
   else if(x=t.closest('[data-del]')){if(confirm('Delete?'))delDay(x.dataset.del)}
@@ -704,5 +734,9 @@ document.addEventListener('click',e=>{const t=e.target,a=t.closest('[data-aedit]
   else if(c){window.LG_C=c.dataset.lc;window.LG_N=60;render()}
   else if(t.id==='lg-more'){window.LG_N=(window.LG_N||60)+60;render()}});
 document.addEventListener('input',e=>{if(e.target.id==='lg-q'){window.LG_Q=e.target.value;window.LG_N=60;const p=e.target.selectionStart;render();const q=$('#lg-q');if(q){q.focus();q.setSelectionRange(p,p)}}});
+document.addEventListener('click',e=>{const t=e.target,r=t.closest('[data-pwreset]');
+  if(t.id==='pw')openPwd();else if(t.id==='pw-save')savePwd();else if(r)sendReset(r.dataset.pwreset);
+  else if(t.id==='xc'||t.id==='mdl'){const m=document.getElementById('mdl');if(m)m.remove()}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&['pw-cur','pw-new','pw-new2'].includes(e.target.id))savePwd()});
 boot();
 </script></body></html>
