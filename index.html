@@ -393,8 +393,8 @@ function dash(){
   rs.forEach(o=>viol(date,o).forEach(v=>exd(date,o.name,v.t)?ex++:tv++));
   const ct=f=>rs.filter(o=>f(o)).length;
   const body=rs.map(o=>{
-    return`<tr><td class="n">${esc(o.name)}${o.manual?` <span class="chip good" data-man="${esc(o.name)}" style="cursor:pointer" title="Manual entry – click to edit">manual</span>`:''}${o.exempt?` <span class="tag" title="Work, Emergency and Appointment are not counted">(exempt)</span>`:''}</td>
-    <td class="c" style="white-space:nowrap">${USER_ROLE!=='viewer'?`<button class="ib" data-aedit="${esc(o.name)}" title="Edit this agent's data">✎</button><button class="ib" data-adel="${esc(o.name)}" title="Delete this agent's data for this date">🗑</button>`:''}</td>
+    return`<tr><td class="n">${esc(o.name)}${o.manual?` <span class="chip good" data-man="${esc(o.name)}" style="cursor:${USER_ROLE==='admin'?'pointer':'default'}" title="Manual entry">manual</span>`:''}${o.exempt?` <span class="tag" title="Work, Emergency and Appointment are not counted">(exempt)</span>`:''}</td>
+    <td class="c" style="white-space:nowrap">${USER_ROLE==='admin'?`<button class="ib" data-aedit="${esc(o.name)}" title="Edit this agent's data">✎</button><button class="ib" data-adel="${esc(o.name)}" title="Delete this agent's data for this date">🗑</button>`:''}</td>
     <td>${o.hasLogin?`<input class="t" type="time" data-sh="${o.name}" value="${hms(o.shift).slice(0,5)}">`:'<span class="tag">Prev. day</span>'}</td>
     <td>${o.hasLogin?hms(o.login):'Prev. day'}</td><td>${o.first!=null?hms(o.first):'—'}</td>
     ${cell(date,o,'late',o.lateV,formatDuration(mn(o.late)))}
@@ -602,14 +602,14 @@ function data(){
       <div class="k" style="padding:10px 12px"><span>Agents</span><b style="font-size:18px">${info.a}</b></div>
       <div class="k" style="padding:10px 12px"><span>Imported</span><b style="font-size:14px;line-height:1.5">${new Date(info.t).toLocaleString()}</b></div></div>
     <div class="tag" style="margin-bottom:12px;word-break:break-word"><b>Source file(s):</b> ${esc(info.f||'—')}</div>
-    <div class="bar" style="margin:0"><button class="b p" data-opend="${sel}">Open on dashboard</button><button class="b" style="color:var(--redt)" data-del="${sel}">Delete this date</button></div></div>`:'<div class="card"><div class="empty">No data</div></div>';
+    <div class="bar" style="margin:0"><button class="b p" data-opend="${sel}">Open on dashboard</button>${USER_ROLE==='admin'?`<button class="b" style="color:var(--redt)" data-del="${sel}">Delete this date</button>`:''}</div></div>`:'<div class="card"><div class="empty">No data</div></div>';
   const known=[...new Set([...Object.keys(S.days).flatMap(d=>Object.keys(S.days[d])),...Object.keys(S.man).map(k=>k.slice(11))])].sort();
   const ex=(S.cfg&&S.cfg.exempt)||[];
   return`<div class="bar"><input type="file" id="f" accept=".xlsx,.xls"><span class="tag">Import Report (xlsx)</span></div>
   ${picker}
-  <h2>Exempt agents</h2><div class="card pad"><p class="hint" style="margin:8px 0 10px">Work, Emergency and Appointment confirmation are <b>not counted</b> for these agents (still shown, in green, and never counted as violations). Break, late arrival and everything else still count.</p>
+  ${USER_ROLE!=='admin'?'':`<h2>Exempt agents</h2><div class="card pad"><p class="hint" style="margin:8px 0 10px">Work, Emergency and Appointment confirmation are <b>not counted</b> for these agents (still shown, in green, and never counted as violations). Break, late arrival and everything else still count.</p>
   <div style="margin-bottom:10px">${ex.map((n,i)=>`<span class="chip good" style="margin:0 6px 6px 0;font-size:12px">${esc(n)} <b data-exdel="${i}" style="cursor:pointer;margin-left:4px" title="Remove">×</b></span>`).join('')||'<span class="tag">No exempt agents</span>'}</div>
-  <div class="bar" style="margin:0"><input id="ex-in" list="ex-dl" placeholder="Agent name" style="min-width:240px"><datalist id="ex-dl">${known.map(n=>`<option value="${esc(n)}">`).join('')}</datalist><button class="b p" id="ex-add">Add</button></div></div>`
+  <div class="bar" style="margin:0"><input id="ex-in" list="ex-dl" placeholder="Agent name" style="min-width:240px"><datalist id="ex-dl">${known.map(n=>`<option value="${esc(n)}">`).join('')}</datalist><button class="b p" id="ex-add">Add</button></div></div>`}`
 }
 
 const LGC=[['all','All'],['imp','Imports'],['exc','Excuses & notes'],['man','Manual data'],['del','Deletions'],['set','Settings'],['usr','Users']];
@@ -756,14 +756,15 @@ function openExport(){
   document.body.appendChild(m)}
 
 function render(){
-  let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data'],['log','Audit Log']];
-  if(USER_ROLE==='admin')navItems.push(['admin','Admin Panel']);
+  if(tab==='log'&&USER_ROLE!=='admin')tab='dash';
+  let navItems=[['dash','Dashboard'],['mon','Monthly Report'],['data','Data']];
+  if(USER_ROLE==='admin')navItems.push(['log','Audit Log'],['admin','Admin Panel']);
   $('#nav').innerHTML=navItems.map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
   const ds=Object.keys(S.idx).sort();if(!date)date=ds[ds.length-1]||new Date().toISOString().slice(0,10);if(tab!=='mon'||!month)month=date.slice(0,7);
   const lm=tab==='mon'?month:date.slice(0,7);if(DB&&!LOADED[lm]&&(tab==='dash'||tab==='mon')){$('#app').innerHTML='Loading…';Promise.all(adj(lm).map(loadMonth)).then(render);return}
   if(tab==='log'&&LOGS===null){(async()=>{if(DB){try{const q=await DB.collection('log').orderBy('t','desc').limit(200).get();LOGS=q.docs.map(x=>x.data())}catch(e){LOGS=[]}}else LOGS=[];render()})();return}
   if(tab==='admin'&&USER_ROLE==='admin'&&USERS_LIST===null){loadUsersList().then(render);return}
-  const bar=tab==='dash'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button><input id="q" placeholder="Search..." value="${window.Q||''}">${USER_ROLE!=='viewer'?'<button class="b" id="addman" style="margin-left:auto">+ Add agent data</button>':''}<button class="b p" data-exp="1" style="margin-left:${USER_ROLE!=='viewer'?'8px':'auto'}">⬇ Download report</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"></div>`:'';
+  const bar=tab==='dash'?`<div class="bar"><button class="b" data-step="-1">◀</button><input type="date" id="dt" value="${date}"><button class="b" data-step="1">▶</button><input id="q" placeholder="Search..." value="${window.Q||''}">${USER_ROLE==='admin'?'<button class="b" id="addman" style="margin-left:auto">+ Add agent data</button>':''}<button class="b p" data-exp="1" style="margin-left:${USER_ROLE==='admin'?'8px':'auto'}">⬇ Download report</button></div>`:tab==='mon'?`<div class="bar"><input type="month" id="mo" value="${month}"></div>`:'';
   $('#app').innerHTML=bar+({dash,mon:monthly,data,log:logv,admin:adminPanel}[tab])();
 }
 
@@ -857,14 +858,15 @@ function saveMan(){const g=id=>($('#'+id)||{}).value||'',c=id=>!!($('#'+id)||{})
   const k=date+'|'+name;S.man[k]=rec;persistMap('mn',k);logA('Manual entry',dmy(date)+' · '+name+(rec.note?' — '+rec.note:''));
   const m=document.getElementById('mdl');if(m)m.remove();render()}
 function delMan(){const n=($('#mn-name')||{}).value,k=date+'|'+n;delete S.man[k];persistMap('mn',k);logA('Delete manual entry',dmy(date)+' · '+n);const m=document.getElementById('mdl');if(m)m.remove();render()}
+document.addEventListener('click',e=>{if(USER_ROLE!=='admin'&&e.target.closest('[data-del],#addman,[data-man],[data-aedit],[data-adel],#mn-save,#mn-del')){e.stopPropagation();e.preventDefault();return}},true);
 document.addEventListener('click',e=>{if(USER_ROLE==='viewer'&&e.target.closest('[data-ex],[data-del],#addman,#mn-save,#mn-del,#ex-add,[data-exdel],[data-man],[data-aedit],[data-adel]')){e.stopPropagation();alert('This is a read-only account.')}},true);
 document.addEventListener('click',e=>{const t=e.target,id=t.id,x=t.closest('[data-man]'),xd=t.closest('[data-exdel]');
   if(id==='addman')openMan(null);
   else if(x)openMan(x.dataset.man);
   else if(id==='mn-save')saveMan();
   else if(id==='mn-del')delMan();
-  else if(id==='ex-add'){const v=($('#ex-in').value||'').trim().replace(/\s+/g,' ');if(!v)return;S.cfg=S.cfg||{exempt:[]};if(!S.cfg.exempt.some(n=>nz(n)===nz(v))){S.cfg.exempt.push(v);saveCfg();logA('Exempt agent added',v)}render()}
-  else if(xd){const i=+xd.dataset.exdel,n=S.cfg.exempt[i];S.cfg.exempt.splice(i,1);saveCfg();logA('Exempt agent removed',n);render()}});
+  else if(id==='ex-add'&&USER_ROLE==='admin'){const v=($('#ex-in').value||'').trim().replace(/\s+/g,' ');if(!v)return;S.cfg=S.cfg||{exempt:[]};if(!S.cfg.exempt.some(n=>nz(n)===nz(v))){S.cfg.exempt.push(v);saveCfg();logA('Exempt agent added',v)}render()}
+  else if(xd&&USER_ROLE==='admin'){const i=+xd.dataset.exdel,n=S.cfg.exempt[i];S.cfg.exempt.splice(i,1);saveCfg();logA('Exempt agent removed',n);render()}});
 document.addEventListener('click',e=>{if(e.target.id==='reimp'){WANT=date;pickFile();return}});
 document.addEventListener('click',e=>{const t=e.target,a=t.closest('[data-aedit]'),d=t.closest('[data-adel]'),l=t.closest('[data-lt]'),c=t.closest('[data-lc]');
   if(a)openMan(a.dataset.aedit);
