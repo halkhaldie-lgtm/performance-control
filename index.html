@@ -64,12 +64,115 @@ thead th{background:#1e3a8a;color:#eef3ff;font-weight:700;letter-spacing:.6px;bo
 thead th:first-child{border-top-left-radius:10px}thead th:last-child{border-top-right-radius:10px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) thead th{background:#152447;border-bottom-color:#3b82f6}}
 :root[data-theme="dark"] thead th{background:#152447;border-bottom-color:#3b82f6}
+
+.hdr-tools{display:flex;gap:8px;align-items:center}.hdr-tools .b{padding:6px 11px;font-size:13px}
+#st{display:flex;align-items:center;gap:8px;font-size:12px;color:#cbd5ee;margin-right:2px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.25);flex:none}
+.dot.on{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.28)}
+.received-high{background:var(--red)!important;color:var(--redt)!important;box-shadow:inset 0 0 0 1px rgba(239,68,68,.35)!important}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#080d1a;--card:#0f1729;--tx:#eaf0ff;--mut:#93a4c8;--bd:#1d2a47;--pri:#6aa0ff;--red:#3b1824;--redt:#ff8f9e;--amb:#3b2f12;--ambt:#ffd27a;--grn:#0e3326;--grnt:#5fe3a1;--hd:#060a15}
+:root:not([data-theme="light"]) body{background:radial-gradient(1100px 520px at 85% -8%,#122350 0%,#080d1a 62%) fixed}
+:root:not([data-theme="light"]) header{background:linear-gradient(120deg,#060a15,#0f2150);box-shadow:0 2px 14px rgba(0,0,0,.55)}
+:root:not([data-theme="light"]) .card{border-color:#1d2a47;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+:root:not([data-theme="light"]) .k{background:linear-gradient(180deg,#14213d,#0f1729);border-color:#1d2a47;border-top-color:#6aa0ff;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+:root:not([data-theme="light"]) .k b{color:#f4f7ff}
+:root:not([data-theme="light"]) thead th{background:#14295c;color:#eaf0ff;border-bottom:3px solid #4f8cff}
+:root:not([data-theme="light"]) tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(106,160,255,.08)}
+:root:not([data-theme="light"]) td{border-top-color:#1b2744}
+:root:not([data-theme="light"]) input,:root:not([data-theme="light"]) select,:root:not([data-theme="light"]) textarea{background:#0b1324;color:#eaf0ff;border-color:#26355a;color-scheme:dark}
+:root:not([data-theme="light"]) input::placeholder{color:#6f82ab}
+:root:not([data-theme="light"]) button.b{background:#14213d;color:#eaf0ff;border-color:#26355a}
+:root:not([data-theme="light"]) button.b:hover{background:#1b2d55}
+:root:not([data-theme="light"]) button.b.p,:root:not([data-theme="light"]) button.p{background:#3b6fe0;border-color:#3b6fe0;color:#fff}
+:root:not([data-theme="light"]) button.b.p:hover{background:#4d7cf0}
+:root:not([data-theme="light"]) nav button.on{background:#2f5fd0}
+:root:not([data-theme="light"]) .hdr-tools .b{background:rgba(255,255,255,.08);color:#eaf0ff;border-color:rgba(255,255,255,.16)}
+:root:not([data-theme="light"]) .hdr-tools .b:hover{background:rgba(255,255,255,.16)}
+:root:not([data-theme="light"]) .lkc{background:#13203a;border-color:#26355a}:root:not([data-theme="light"]) .lkc.on{background:#3b6fe0;border-color:#3b6fe0}
+:root:not([data-theme="light"]) *{scrollbar-color:#2b3c66 transparent}}
+:root[data-theme="dark"]{--bg:#080d1a;--card:#0f1729;--tx:#eaf0ff;--mut:#93a4c8;--bd:#1d2a47;--pri:#6aa0ff;--red:#3b1824;--redt:#ff8f9e;--amb:#3b2f12;--ambt:#ffd27a;--grn:#0e3326;--grnt:#5fe3a1;--hd:#060a15}
+:root[data-theme="dark"] body{background:radial-gradient(1100px 520px at 85% -8%,#122350 0%,#080d1a 62%) fixed}
+:root[data-theme="dark"] header{background:linear-gradient(120deg,#060a15,#0f2150);box-shadow:0 2px 14px rgba(0,0,0,.55)}
+:root[data-theme="dark"] .card{border-color:#1d2a47;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+:root[data-theme="dark"] .k{background:linear-gradient(180deg,#14213d,#0f1729);border-color:#1d2a47;border-top-color:#6aa0ff;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+:root[data-theme="dark"] .k b{color:#f4f7ff}
+:root[data-theme="dark"] thead th{background:#14295c;color:#eaf0ff;border-bottom:3px solid #4f8cff}
+:root[data-theme="dark"] tbody tr:hover td:not(.v):not(.x):not(.w):not(.n){background:rgba(106,160,255,.08)}
+:root[data-theme="dark"] td{border-top-color:#1b2744}
+:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea{background:#0b1324;color:#eaf0ff;border-color:#26355a;color-scheme:dark}
+:root[data-theme="dark"] input::placeholder{color:#6f82ab}
+:root[data-theme="dark"] button.b{background:#14213d;color:#eaf0ff;border-color:#26355a}
+:root[data-theme="dark"] button.b:hover{background:#1b2d55}
+:root[data-theme="dark"] button.b.p,:root[data-theme="dark"] button.p{background:#3b6fe0;border-color:#3b6fe0;color:#fff}
+:root[data-theme="dark"] button.b.p:hover{background:#4d7cf0}
+:root[data-theme="dark"] nav button.on{background:#2f5fd0}
+:root[data-theme="dark"] .hdr-tools .b{background:rgba(255,255,255,.08);color:#eaf0ff;border-color:rgba(255,255,255,.16)}
+:root[data-theme="dark"] .hdr-tools .b:hover{background:rgba(255,255,255,.16)}
+:root[data-theme="dark"] .lkc{background:#13203a;border-color:#26355a}:root[data-theme="dark"] .lkc.on{background:#3b6fe0;border-color:#3b6fe0}
+:root[data-theme="dark"] *{scrollbar-color:#2b3c66 transparent}
+
+/* ===== header tools: compact group + green online pill ===== */
+header{position:sticky;top:0;z-index:10}
+:root{--hh:64px}
+.hdr-tools{gap:6px;margin-left:auto}
+#st{padding:5px 12px;border-radius:99px;background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.45);color:#ffd0d0;margin-right:4px;transition:.2s}
+#st.on{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.6);color:#c9ffe0}
+.hdr-tools .b{padding:6px 12px}
+/* ===== frozen table headers (like Excel freeze top row) ===== */
+th{position:sticky;top:var(--hh);z-index:3}
+table.dt thead th,.card table thead th{position:sticky;top:var(--hh)}
+.card{overflow-x:visible}
+.card.scroll{overflow-x:auto}
+td.n{z-index:2}
+table.nosticky th{position:static!important}
+/* ===== premium dark theme ===== */
+:root[data-theme="dark"]{--bg:#070b16;--card:#0e1628;--tx:#f1f5ff;--mut:#9fb0d3;--bd:#22325a;--pri:#5b9dff;--red:rgba(255,82,102,.16);--redt:#ff8a98;--amb:rgba(255,193,69,.15);--ambt:#ffd27a;--grn:rgba(52,211,153,.14);--grnt:#4ade9c;--hd:#050813}
+:root[data-theme="dark"] body{background:radial-gradient(900px 480px at 90% -10%,#16307a 0%,transparent 60%),radial-gradient(800px 420px at -5% 105%,#0f2a5e 0%,transparent 55%),#070b16 fixed}
+:root[data-theme="dark"] header{background:linear-gradient(110deg,#050813 0%,#0c1c4a 55%,#13307a 100%);border-bottom:1px solid #1f3a80;box-shadow:0 4px 22px rgba(20,60,160,.35)}
+:root[data-theme="dark"] nav button{color:#b8c8ee}
+:root[data-theme="dark"] nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+:root[data-theme="dark"] nav button.on{background:linear-gradient(135deg,#3b82f6,#2457d6);color:#fff;box-shadow:0 2px 12px rgba(59,130,246,.5)}
+:root[data-theme="dark"] .card{background:linear-gradient(180deg,#111b33,#0d1527);border:1px solid #22325a;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+:root[data-theme="dark"] .k{background:linear-gradient(180deg,#16233f,#0e1628);border:1px solid #22325a;border-top:3px solid #5b9dff;box-shadow:0 8px 22px rgba(0,0,0,.45),0 0 0 1px rgba(91,157,255,.05)}
+:root[data-theme="dark"] .k b{color:#fff;text-shadow:0 0 18px rgba(91,157,255,.45)}
+:root[data-theme="dark"] .k span{color:#a8b8dc}
+:root[data-theme="dark"] thead th{background:linear-gradient(180deg,#1b3a85,#142c68);color:#f2f6ff;border-bottom:3px solid #5b9dff}
+:root[data-theme="dark"] td{border-top:1px solid #1a2849;color:#e6ecfb}
+:root[data-theme="dark"] td.n{background:#0f1830;color:#fff}
+:root[data-theme="dark"] tbody tr:nth-child(even) td:not(.v):not(.x):not(.w):not(.n){background:rgba(91,157,255,.035)}
+:root[data-theme="dark"] tbody tr:hover td:not(.v):not(.x):not(.w){background:rgba(91,157,255,.13)}
+:root[data-theme="dark"] .v,:root[data-theme="dark"] .received-high{background:rgba(255,82,102,.2)!important;color:#ff93a0!important;box-shadow:inset 0 0 0 1px rgba(255,82,102,.45)!important}
+:root[data-theme="dark"] .x{background:rgba(52,211,153,.16);color:#6ee7b7}
+:root[data-theme="dark"] .w{background:rgba(255,193,69,.18);color:#ffd27a}
+:root[data-theme="dark"] .ok,:root[data-theme="dark"] .ok-badge{color:#4ade9c}
+:root[data-theme="dark"] .v-badge{background:rgba(255,82,102,.2);color:#ff93a0}
+:root[data-theme="dark"] .chip.bad{background:rgba(255,82,102,.2);color:#ff93a0;border:1px solid rgba(255,82,102,.35)}
+:root[data-theme="dark"] .chip.good{background:rgba(52,211,153,.16);color:#6ee7b7;border:1px solid rgba(52,211,153,.3)}
+:root[data-theme="dark"] .tp-card{background:linear-gradient(180deg,#131f3a,#0e1628);border-color:#22325a}
+:root[data-theme="dark"] .tp-card.best{background:linear-gradient(160deg,#10281f,#0e1628 70%)}
+:root[data-theme="dark"] .tp-card.worst{background:linear-gradient(160deg,#2c1220,#0e1628 70%)}
+:root[data-theme="dark"] .tp-rank{background:#1a2849;color:#fff}
+:root[data-theme="dark"] .tp-bar{background:#1a2849}
+:root[data-theme="dark"] .ib{background:#1a2849;color:#e6ecfb}
+:root[data-theme="dark"] .ib:hover{background:#26396b}
+:root[data-theme="dark"] .lkc:hover{border-color:#5b9dff}
+:root[data-theme="dark"] .lg-b{background:#1a2849;color:#b8c8ee}
+:root[data-theme="dark"] .lg-b.imp{background:rgba(59,130,246,.22);color:#9cc2ff}
+:root[data-theme="dark"] .lg-b.man{background:rgba(139,92,246,.22);color:#c4b0ff}
+:root[data-theme="dark"] .lg-b.usr{background:rgba(14,165,233,.2);color:#8fdcff}
+:root[data-theme="dark"] .lg-row{border-bottom-color:#1a2849}
+:root[data-theme="dark"] .hint,:root[data-theme="dark"] .tag{color:#9fb0d3}
+:root[data-theme="dark"] h2{color:#f1f5ff}
+:root[data-theme="dark"] input:focus,:root[data-theme="dark"] select:focus,:root[data-theme="dark"] textarea:focus{outline:2px solid rgba(91,157,255,.55);border-color:#5b9dff}
+:root[data-theme="dark"] .hdr-tools .b{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
+:root[data-theme="dark"] .hdr-tools .b:hover{background:rgba(255,255,255,.2)}
+:root[data-theme="dark"] #st{color:#ffc9c9}:root[data-theme="dark"] #st.on{color:#c9ffe0}
 </style></head><body>
 <header><h1>Performance Contact Center<small>Agent attendance &amp; conduct monitoring</small></h1>
-<nav id="nav"></nav><span id="st" style="font-size:12px;color:#cbd5ee"></span><button class="b" id="pw">🔑 Password</button><button class="b" id="so">Sign out</button><button class="b" id="th">◐ Theme</button></header>
+<nav id="nav"></nav><div class="hdr-tools"><span id="st"></span><button class="b" id="th">◐ Theme</button><button class="b" id="pw">🔑 Password</button><button class="b" id="so">Sign out</button></div></header>
 <main id="app"></main>
 <script>
-const LIM={grace:300,emerg:180,brk:43*60,work:300,cna:6,shift:8*3600,appt:120,lastBrk:900,lastWork:300,recv:6};
+const LIM={grace:300,emerg:180,brk:43*60,work:300,cna:6,shift:8*3600,appt:120,lastBrk:900,lastWork:300,recv:5,earlyTol:270,fullHr:300};
 let S={days:{},idx:{},shifts:{},ex:{},man:{},cfg:{exempt:['Dari Alshammari','Hatem Rashed','Walid Ibrahim','Abdulaziz Jasem','Hawara Abbas']}},tab='dash',date='',month='';const FB_CONFIG={apiKey:"AIzaSyC5wAmajiFgKEAfi4Ay0ZA1QGL-KS4K9zo",authDomain:"performance-control-ab7f9.firebaseapp.com",projectId:"performance-control-ab7f9",storageBucket:"performance-control-ab7f9.firebasestorage.app",messagingSenderId:"599359001764",appId:"1:599359001764:web:8ae96947247d8036b60231"};
 let MEN='',DB=null,ME=null,LOADED={},LOGS=null,USER_ROLE='editor';
 try{const r=localStorage.getItem('pcc_v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
@@ -129,12 +232,13 @@ async function boot(){
     hideLogin();DB=firebase.firestore();ME=u.uid;MEN=u.email||'';
     try{
       const uDoc=await DB.doc('users/'+ME).get();
-      if(uDoc.exists)USER_ROLE=uDoc.data().role||'editor';
+      if(!uDoc.exists||uDoc.data().active===false){const why=!uDoc.exists?'This account has no access to the system. Please contact the administrator.':'This account has been disabled. Please contact the administrator.';await auth.signOut();showLogin(why);return}
+      USER_ROLE=uDoc.data().role||'editor';
       const g=await DB.doc('meta/index').get();S.idx=g.exists?(g.data().dates||{}):{};
       const gs=await DB.doc('meta/settings').get();if(gs.exists&&gs.data().cfg)S.cfg=gs.data().cfg;else saveCfg();
     }catch(e){}
     S.days={};S.ex={};S.shifts={};S.man={};LOADED={};date='';month='';
-    $('#st').textContent='\u25cf '+MEN;render()})}
+    $('#st').className=navigator.onLine?'on':'';$('#st').innerHTML='<i class="dot'+(navigator.onLine?' on':'')+'" id="stdot"></i><span>'+esc(MEN)+'</span>';render();startPresence()})}
 
 function importFile(f){
   const rd=new FileReader();rd.onload=e=>{
@@ -166,7 +270,7 @@ function importFile(f){
 
 let WANT=null;
 const exOn=v=>v===1||!!(v&&v.e===1);
-const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer',appt:'Appointment confirmation >2 min',lbrk:'Break in last 15 min',lwork:'Work in last 5 min',recv:'Talking over 6 (0–3 sec)'};
+const VN={late:'Late arrival',emerg:'Emergency',brk:'Break overrun',work:'Work overrun',cna:'Call No Answer',appt:'Appointment confirmation >2 min',lbrk:'Break in last 15 min',lwork:'Work in last 5 min',recv:'Talking 5+ (0–3 sec)',early:'Early logout'};
 function openNote(k){
   const [d,n,t]=k.split('|'),cur=S.ex[k],on=exOn(cur),note=(cur&&cur.n)||'';
   const m=document.createElement('div');m.id='mdl';m.dataset.k=k;m.style.cssText=MS;
@@ -214,7 +318,7 @@ const agentsOf=d=>[...new Set([...Object.keys(S.days[d]||{}),...Object.keys(S.ma
 const daysIn=m=>[...new Set([...Object.keys(S.days),...Object.keys(S.man).map(k=>k.slice(0,10))])].filter(d=>d.startsWith(m)).sort();
 function finish(o){const ex=isExempt(o.name);o.exempt=ex;
   o.brkV=o.brk>LIM.brk;o.workV=!ex&&o.work>LIM.work;o.emV=!ex&&o.em.n>0;
-  o.apptV=!ex&&o.appt>0;o.lbrkV=o.lbrk.length>0;o.lworkV=!ex&&o.lwork.length>0;o.recvV=rcnt(o)>LIM.recv;return o}
+  o.apptV=!ex&&o.appt>0;o.lbrkV=o.lbrk.length>0;o.lworkV=!ex&&o.lwork.length>0;o.recvV=rcnt(o)>=LIM.recv;o.earlyV=!ex&&o.hasLogin&&!o.outEm&&o.out!=null&&o.out<o.shift+LIM.shift-LIM.earlyTol&&(o.out%3600)>=LIM.fullHr;return o}
 function manualCalc(dt,name,m){
   const sh=tosec(S.shifts[dt+'|'+name]),shift=sh!=null?sh:(tosec(m.shift)||0),login=tosec(m.login),first=tosec(m.first);
   const ref=first!=null?first:login,late=ref!=null&&shift?Math.max(0,ref-shift):0;let out=tosec(m.out);if(out!=null&&m.outNext)out+=86400;
@@ -258,9 +362,10 @@ function viol(dt,o){
   if(o.apptV)v.push({t:'appt',l:'Appointment confirmation >2 min',v:o.apptT.length?o.apptT.join(', '):o.appt+' call(s)'});
   if(o.lbrkV)v.push({t:'lbrk',l:'Break in last 15 min',v:restrList(o.lbrk,o.lbrkD)});
   if(o.lworkV)v.push({t:'lwork',l:'Work in last 5 min',v:restrList(o.lwork,o.lworkD)});
-  if(o.recvV)v.push({t:'recv',l:'Talking over '+LIM.recv+' (0–3 sec)',v:rcnt(o)+' calls'+(o.rt.length?': '+o.rt.join(', '):'')});
+  if(o.earlyV)v.push({t:'early',l:'Early logout',v:'left '+hms(o.out)+' · shift ends '+hms(o.shift+LIM.shift)+' ('+durFull(o.shift+LIM.shift-o.out)+' early)'});
+  if(o.recvV)v.push({t:'recv',l:'Talking '+LIM.recv+'+ (0–3 sec)',v:rcnt(o)+' calls'+(o.rt.length?': '+o.rt.join(', '):'')});
   return v}
-const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Talking (0–3 sec)']];
+const TY=[['late','Late'],['emerg','Emergency'],['brk','Break'],['work','Work'],['cna','Call No Answer'],['appt','Appointment'],['lbrk','Break last 15'],['lwork','Work last 5'],['recv','Talking (0–3 sec)'],['early','Early logout']];
 
 const emDur=g=>g<60?g+' sec':formatDuration(mn(g));
 const emTxt=o=>o.em.n?o.em.n+' / '+emDur(o.em.s):'0';
@@ -299,7 +404,7 @@ function dash(){
     ${cell(date,o,'cna',o.cna,o.cna)}
     ${o.exempt?mcell(o.appt,o.appt?'Exempt – not counted: '+o.apptT.join(', '):''):cell(date,o,'appt',o.apptV,o.appt,'v',o.apptT.join(', '))}
     <td>${o.lbrkV?rchip(date,o,'lbrk','Break '+o.lbrk[0],restrTip('Break',o.lbrk,o.lbrkD)):''}${o.lworkV?rchip(date,o,'lwork','Work '+o.lwork[0],restrTip('Work',o.lwork,o.lworkD)):''}${o.lbrkV||o.lworkV?'':'<span class="tag">—</span>'}</td>
-    <td${o.outNext?' title="Logout taken from the next day\'s report"':''}>${formatTimeOut(o.out)}</td>${cell(date,o,'recv',o.recvV,rcnt(o),'received-high',o.rt.join(', '))}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
+    ${o.earlyV?cell(date,o,'early',true,formatTimeOut(o.out),'v','Shift ends '+hms(o.shift+LIM.shift)+' · left '+durFull(o.shift+LIM.shift-o.out)+' early'):`<td${o.outNext?' title="Logout taken from the next day\'s report"':''}>${formatTimeOut(o.out)}</td>`}${cell(date,o,'recv',o.recvV,rcnt(o),'received-high',o.rt.join(', '))}<td>${nv(o)?`<span class="chip bad">${nv(o)} open</span>`:'<span class="chip good">Clean</span>'}</td></tr>`}).join('');
   
   const old=S.idx[date]&&(S.idx[date].v||1)<2;
   const oldBanner=old?`<div class="card" style="padding:12px 16px;margin-bottom:12px;background:var(--amb);border-color:transparent;color:var(--ambt);display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px"><b>This date was saved with an older version.</b> Talking and Appointment confirmation need the report to be imported again.</span>${USER_ROLE!=='viewer'?'<button class="b p" id="reimp">Re-import this date</button>':''}</div>`:'';
@@ -309,7 +414,7 @@ function dash(){
   <div class="k"><b>${ct(o=>o.emV)}</b><span>Emergency</span></div>
   <div class="k"><b>${ct(o=>o.brkV)}</b><span>Break overruns</span></div>
   <div class="k"><b>${tv}</b><span>Open violations</span></div><div class="k"><b>${ex}</b><span>Excused</span></div><div class="k"><b>${rs.reduce((a,o)=>a+rcnt(o),0)}</b><span>Talking (0–3 sec)</span></div><div class="k"><b>${ct(o=>o.apptV)}</b><span>Appointment >2 min</span></div><div class="k"><b>${ct(o=>o.lbrkV||o.lworkV)}</b><span>Restricted time</span></div></div>
-  <div class="card"><table class="dt"><thead><tr><th>Agent</th><th></th><th>Shift start</th><th>Login</th><th>First active</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Appt. confirm &gt;2 min</th><th title="Break in the last 15 min or Work in the last 5 min of the shift">Restricted time</th><th>Logout time</th><th class="c">Talking</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
+  <div class="card" style="overflow:visible"><table class="dt"><thead><tr><th>Agent</th><th></th><th>Shift start</th><th>Login</th><th>First active</th><th>Late</th><th>Emergency (count/time)</th><th>Break total</th><th>Work total</th><th>Call no answer</th><th>Appt. confirm &gt;2 min</th><th title="Break in the last 15 min or Work in the last 5 min of the shift">Restricted time</th><th>Logout time</th><th class="c">Talking</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>`}
 
 function monthly(){
   const ds=daysIn(month);
@@ -344,7 +449,7 @@ function monthly(){
   const alphaAgents=[...sortedAgents].sort((a,b)=>a.name.localeCompare(b.name));
 
   const mxV=Math.max(1,...sortedAgents.map(a=>a.total));
-  const TN={late:'Late',brk:'Break',work:'Work',cna:'CNA',emerg:'Emergency',appt:'Appt.',lbrk:'Break last 15',lwork:'Work last 5',recv:'Talking (0–3 sec)'};
+  const TN={late:'Late',brk:'Break',work:'Work',cna:'CNA',emerg:'Emergency',appt:'Appt.',lbrk:'Break last 15',lwork:'Work last 5',recv:'Talking (0–3 sec)',early:'Early logout'};
   const why=a=>Object.entries(a.raw).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).slice(0,2).map(x=>(TN[x[0]]||x[0])+' ×'+x[1]).join(' · ')||'No violations';
   const tRow=(a,i,k)=>`<div class="tp-row"><span class="tp-rank ${k}">${k==='best'?['🥇','🥈','🥉'][i]:i+1}</span><div class="tp-main"><div class="tp-nm">${esc(a.name)}</div><div class="tp-sub">${why(a)}</div><div class="tp-bar"><i class="${k}" style="width:${a.total?Math.max(6,a.total/mxV*100):0}%"></i></div></div><div class="tp-cnt ${k}">${a.total}</div></div>`;
   const tCard=(k,ico,ttl,sub,list)=>`<div class="tp-card ${k}"><div class="tp-hd"><span>${ico}</span><div><b>${ttl}</b><small>${sub}</small></div></div>${list.length?list.map((a,i)=>tRow(a,i,k)).join(''):'<div class="tag">No agents</div>'}</div>`;
@@ -361,7 +466,8 @@ function monthly(){
       <td class="c">${renderCell(a.raw.emerg||0)}</td>
       <td class="c">${renderCell(a.raw.appt||0)}</td>
       <td class="c">${renderCell((a.raw.lbrk||0)+(a.raw.lwork||0))}</td>
-      <td class="c" title="Total calls 0–3 sec this month · days over the limit: ${a.raw.recv||0}">${tkTot[a.name]?`<span class="${a.raw.recv?'received-high':''}" style="padding:2px 9px;border-radius:6px;font-weight:700">${tkTot[a.name]}</span>`:'<span style="color:var(--mut)">0</span>'}</td>
+      <td class="c">${renderCell(a.raw.early||0)}</td>
+      <td class="c" title="Total calls 0–3 sec this month · days with 5 or more: ${a.raw.recv||0}">${tkTot[a.name]?`<span class="${a.raw.recv?'received-high':''}" style="padding:2px 9px;border-radius:6px;font-weight:700">${tkTot[a.name]}</span>`:'<span style="color:var(--mut)">0</span>'}</td>
       <td class="c n">${a.total>0?`<span class="v-badge">${a.total}</span>`:`<span class="ok-badge">0</span>`}</td>
     </tr>`;
   }).join('');
@@ -391,7 +497,7 @@ function monthly(){
     </h2>
   </div>
   
-  <div class="card" style="border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+  <div class="card" style="border-radius:10px;overflow:visible;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
     <table style="width:100%;border-collapse:collapse;">
       <thead>
         <tr style="background:#0f1c3f;color:#ffffff;">
@@ -403,6 +509,7 @@ function monthly(){
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">EMERGENCY</th>
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">APPOINTMENT</th>
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">RESTRICTED TIME</th>
+          <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">EARLY LOGOUT</th>
           <th style="padding:10px 10px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">TALKING (0–3s)</th>
           <th style="padding:10px 14px;text-align:center;font-size:11px;letter-spacing:.4px;color:#ffffff;background:#0f1c3f;">TOTAL REAL VIOLATIONS</th>
         </tr>
@@ -418,7 +525,7 @@ function monthly(){
     
     ${chipsHtml}
     <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:var(--bg)">
-      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:100%">
+      <table class="nosticky" style="width:100%;border-collapse:collapse;font-size:13px;min-width:100%">
         <thead>
           <tr style="background:var(--hd);color:#fff">
             <th style="padding:8px 12px;text-align:left;font-size:11px;letter-spacing:.5px">DATE</th>
@@ -434,8 +541,22 @@ function monthly(){
   </div>`;
 }
 
-let USERS_LIST=null;
-async function loadUsersList(){try{const q=await DB.collection('users').get();USERS_LIST=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>String(a.email).localeCompare(String(b.email)))}catch(e){USERS_LIST=[]}}
+let USERS_LIST=null,PRES={},PRES_ERR=false,PRES_T=null;
+async function loadUsersList(){
+  try{const q=await DB.collection('users').get();USERS_LIST=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>String(a.email||a.id).localeCompare(String(b.email||b.id)))}catch(e){USERS_LIST=[]}
+  try{const p=await DB.collection('presence').get();PRES={};p.docs.forEach(d=>PRES[d.id]=d.data());PRES_ERR=false}catch(e){PRES_ERR=true}
+}
+const isOnline=id=>{if(id===ME)return true;const p=PRES[id];if(!p||p.online===false||!p.t)return false;const ms=p.t.toMillis?p.t.toMillis():+p.t;return Date.now()-ms<300000};
+function usersTableHtml(){
+  const L=USERS_LIST||[];
+  const rows=L.map(u=>{const on=isOnline(u.id),me=u.id===ME,p=PRES[u.id],last=p&&p.t?new Date(p.t.toMillis?p.t.toMillis():+p.t).toLocaleString():'';
+    return`<tr><td class="c"><i class="dot${on?' on':''}" title="${on?'Online':'Offline'}${!on&&last?' · last seen '+esc(last):''}"></i></td><td class="n">${esc(u.email||u.id)}${me?' <span class="tag">(you)</span>':''}</td><td>${esc(u.role||'')}</td><td>${u.active===false?'<span class="chip bad">Disabled</span>':'<span class="chip good">Active</span>'}</td>
+    <td style="white-space:nowrap"><button class="b" data-pwreset="${esc(u.email||'')}">Send reset email</button>${me?'':` <button class="b" data-uact="${u.active===false?'en':'dis'}" data-uid="${esc(u.id)}">${u.active===false?'Enable':'Disable'}</button> <button class="b" style="color:var(--redt)" data-uact="del" data-uid="${esc(u.id)}">Delete</button>`}</td></tr>`}).join('');
+  return(PRES_ERR?'<div class="chip bad" style="margin-bottom:10px;white-space:normal">Online status needs the updated Firestore rules (collection "presence"). Publish the new firestore.rules to turn it on.</div>':'')+
+  `<div class="card" style="margin:0"><table style="min-width:640px"><thead><tr><th style="width:34px"></th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan=5 class="empty">No users</td></tr>'}</tbody></table></div>`}
+const beat=on=>{if(!DB||!ME)return;DB.doc('presence/'+ME).set({t:firebase.firestore.FieldValue.serverTimestamp(),email:MEN,online:on!==false},{merge:true}).catch(()=>{})};
+function startPresence(){beat(true);clearInterval(PRES_T);PRES_T=setInterval(()=>beat(true),180000)}
+const setDot=on=>{const d=document.getElementById('stdot');if(d)d.className='dot'+(on?' on':'');const st=document.getElementById('st');if(st)st.className=on?'on':''};
 function openPwd(){const m=document.createElement('div');m.id='mdl';m.style.cssText=MS;
   m.innerHTML=`<div class="card" style="padding:22px;width:min(420px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:18px">Change my password</h2><p class="hint" style="margin:0 0 12px">${esc(MEN)}</p>
   <div style="display:grid;gap:10px"><input id="pw-cur" type="password" placeholder="Current password" autocomplete="current-password"><input id="pw-new" type="password" placeholder="New password (min 6 characters)" autocomplete="new-password"><input id="pw-new2" type="password" placeholder="Repeat the new password" autocomplete="new-password">
@@ -466,19 +587,26 @@ function adminPanel(){
       <span id="nu-msg" style="font-size:12px;color:var(--grnt)"></span>
     </div>
   </div>
-  <div class="card pad" style="max-width:760px;margin:20px auto"><h2>Users &amp; passwords</h2>
-    <p class="hint">Nobody can see or type another person's password. Use <b>Send reset email</b>: the user receives a link and chooses a new password. Everyone can also change their own password from the <b>🔑 Password</b> button at the top.</p>
-    <div class="card" style="margin:0"><table style="min-width:520px"><thead><tr><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>${(USERS_LIST||[]).map(u=>`<tr><td class="n">${esc(u.email||u.id)}</td><td>${esc(u.role||'')}</td><td>${u.active===false?'<span class="chip bad">Disabled</span>':'<span class="chip good">Active</span>'}</td><td><button class="b" data-pwreset="${esc(u.email||'')}">Send reset email</button></td></tr>`).join('')||'<tr><td colspan=4 class="empty">No users</td></tr>'}</tbody></table></div>
+  <div class="card pad" style="max-width:920px;margin:20px auto"><h2>Users &amp; access</h2>
+    <p class="hint"><i class="dot on"></i> online now &nbsp; <i class="dot"></i> offline. <b>Disable</b> blocks a user without deleting them (you can enable again). <b>Delete</b> removes their access record. Nobody can see another person's password: use <b>Send reset email</b>. Everyone can change their own password from the <b>🔑 Password</b> button.</p>
+    <div id="usrBox">${usersTableHtml()}</div>
   </div>`;
 }
 
 function data(){
   const ds=Object.keys(S.idx).sort().reverse();
-  const rows=ds.map(d=>`<tr><td class="n">${dmy(d)}</td><td>${S.idx[d].a}</td><td>${esc(S.idx[d].f||'')}</td><td>${new Date(S.idx[d].t).toLocaleString()}</td><td><button class="b" data-del="${d}">Delete</button></td></tr>`).join('')||'<tr><td colspan=5 class="empty">No data</td></tr>';
+  const sel=(window.DSEL&&S.idx[window.DSEL])?window.DSEL:ds[0],info=sel?S.idx[sel]:null;
+  const picker=ds.length?`<div class="card pad"><div class="bar" style="margin:0 0 12px"><label class="tag">Saved dates&nbsp;<select id="dsel" style="min-width:260px">${ds.map(d=>`<option value="${d}"${d===sel?' selected':''}>${dmy(d)} · ${S.idx[d].a} agents</option>`).join('')}</select></label><span class="tag">${ds.length} saved day(s)</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px">
+      <div class="k" style="padding:10px 12px"><span>Date</span><b style="font-size:18px">${dmy(sel)}</b></div>
+      <div class="k" style="padding:10px 12px"><span>Agents</span><b style="font-size:18px">${info.a}</b></div>
+      <div class="k" style="padding:10px 12px"><span>Imported</span><b style="font-size:14px;line-height:1.5">${new Date(info.t).toLocaleString()}</b></div></div>
+    <div class="tag" style="margin-bottom:12px;word-break:break-word"><b>Source file(s):</b> ${esc(info.f||'—')}</div>
+    <div class="bar" style="margin:0"><button class="b p" data-opend="${sel}">Open on dashboard</button><button class="b" style="color:var(--redt)" data-del="${sel}">Delete this date</button></div></div>`:'<div class="card"><div class="empty">No data</div></div>';
   const known=[...new Set([...Object.keys(S.days).flatMap(d=>Object.keys(S.days[d])),...Object.keys(S.man).map(k=>k.slice(11))])].sort();
   const ex=(S.cfg&&S.cfg.exempt)||[];
   return`<div class="bar"><input type="file" id="f" accept=".xlsx,.xls"><span class="tag">Import Report (xlsx)</span></div>
-  <div class="card"><table><thead><tr><th>Date</th><th>Agents</th><th>File</th><th>Imported</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  ${picker}
   <h2>Exempt agents</h2><div class="card pad"><p class="hint" style="margin:8px 0 10px">Work, Emergency and Appointment confirmation are <b>not counted</b> for these agents (still shown, in green, and never counted as violations). Break, late arrival and everything else still count.</p>
   <div style="margin-bottom:10px">${ex.map((n,i)=>`<span class="chip good" style="margin:0 6px 6px 0;font-size:12px">${esc(n)} <b data-exdel="${i}" style="cursor:pointer;margin-left:4px" title="Remove">×</b></span>`).join('')||'<span class="tag">No exempt agents</span>'}</div>
   <div class="bar" style="margin:0"><input id="ex-in" list="ex-dl" placeholder="Agent name" style="min-width:240px"><datalist id="ex-dl">${known.map(n=>`<option value="${esc(n)}">`).join('')}</datalist><button class="b p" id="ex-add">Add</button></div></div>`
@@ -506,7 +634,7 @@ const nvForDate=(dt,o)=>viol(dt,o).filter(v=>!exd(dt,o.name,v.t)).length;
 const EC={navy:'FF0F1C3F',hd:'FF1E3A8A',pri:'FF1D4ED8',red:'FFFDE8E8',redt:'FFB91C1C',amb:'FFFFF4D6',ambt:'FF92400E',grn:'FFE3F6EA',grnt:'FF15803D',bd:'FFE1E6EF',wh:'FFFFFFFF',mut:'FF6B7791'};
 const RH=['Agent Name','Shift Start','Login Time','First Active','Late Arrival','Emergency','Break Total','Work Total','Call No Ans','Appt. Confirm >2m','Restricted Time','Logout Time','Talking','Status'];
 const RW=[26,12,12,12,13,15,13,13,12,15,22,16,11,12];
-const NC=RH.length,NF=8,FLCOL=[5,6,7,8,9,10,11,13]; // visible columns / flag columns (late,emerg,brk,work,cna,appt,restricted)
+const NC=RH.length,NF=9,FLCOL=[5,6,7,8,9,10,11,13,12]; // visible columns / flag columns (late,emerg,brk,work,cna,appt,restricted)
 const colL=n=>String.fromCharCode(64+n); // 1->A
 const EF=(o)=>Object.assign({name:'Segoe UI',size:10},o||{});
 const fillOf=c=>({type:'pattern',pattern:'solid',fgColor:{argb:c},bgColor:{argb:c}});
@@ -520,7 +648,7 @@ function repRow(d,o){
   return{d,vals:[o.name,o.hasLogin?hms(o.shift):'Prev. day',o.hasLogin?hms(o.login):'Prev. day',o.first!=null?hms(o.first):'—',
     formatDuration(mn(o.late)),o.em.n?o.em.n+' / '+emDur(o.em.s):'0',formatDuration(mn(o.brk)),formatDuration(mn(o.work)),o.cna,o.appt,rs,
     formatTimeOut(o.out),rcnt(o),n?n+' open':'Clean'],
-    fl:[f(o.lateV,'late'),f(o.emV,'emerg'),f(o.brkV,'brk'),f(o.workV,'work'),f(o.cna,'cna'),f(o.apptV,'appt'),open?1:(lv.length?2:0),f(o.recvV,'recv')]}}
+    fl:[f(o.lateV,'late'),f(o.emV,'emerg'),f(o.brkV,'brk'),f(o.workV,'work'),f(o.cna,'cna'),f(o.apptV,'appt'),open?1:(lv.length?2:0),f(o.recvV,'recv'),f(o.earlyV,'early')]}}
 
 async function collectRows(dates){
   const ms=new Set();[addDays(dates[0],-1),...dates,addDays(dates[dates.length-1],1)].forEach(d=>ms.add(d.slice(0,7)));
@@ -531,7 +659,7 @@ async function collectRows(dates){
 function styleBody(cell,c,fl){
   cell.font=EF();cell.alignment={vertical:'middle',horizontal:c===1?'left':'center'};cell.border=BORD();
   const fk=FLCOL.indexOf(c);if(fk>=0){const v=fl[fk];
-    if(v===1){cell.fill=fillOf(c===13?'FFFFEDD5':EC.red);cell.font=EF({bold:true,color:{argb:c===13?'FFC2410C':EC.redt}})}
+    if(v===1){cell.fill=fillOf(c===13?EC.red:EC.red);cell.font=EF({bold:true,color:{argb:c===13?EC.redt:EC.redt}})}
     else if(v===2){cell.fill=fillOf(EC.grn);cell.font=EF({color:{argb:EC.grnt},strike:true})}}
   if(c===NC){const s=String(cell.value);cell.font=EF({bold:true,color:{argb:s==='Clean'?EC.grnt:EC.redt}});cell.fill=fillOf(s==='Clean'?EC.grn:EC.red)}}
 
@@ -570,7 +698,7 @@ async function exportReport(dates,mode){
     const ls=wb.addWorksheet('Lists');ls.getColumn(1).numFmt='@';ls.getColumn(1).width=14;ls.getCell('A1').value='Dates';ls.getCell('A1').font=EF({bold:true});
     dates.forEach((d,i)=>{ls.getCell(i+2,1).value=dmy(d)});
     const ds=wb.addWorksheet('Data');
-    const DH=['Date',...RH,'Flag Late','Flag Emerg','Flag Break','Flag Work','Flag CNA','Flag Appt','Flag Restricted','Flag Talking','Match','Pos'];
+    const DH=['Date',...RH,'Flag Late','Flag Emerg','Flag Break','Flag Work','Flag CNA','Flag Appt','Flag Restricted','Flag Talking','Flag Early','Match','Pos'];
     DH.forEach((h,i)=>{const c=ds.getCell(1,i+1);c.value=h;c.font=EF({bold:true,color:{argb:EC.wh}});c.fill=fillOf(i<NC+1?EC.hd:EC.mut);c.alignment={horizontal:'center',vertical:'middle',wrapText:true}});
     ds.getColumn(1).numFmt='@';ds.getColumn(1).width=13;ds.getColumn(2).width=26;for(let i=3;i<MC;i++)ds.getColumn(i).width=13;
     ds.getColumn(MC).hidden=true;ds.getColumn(PC).hidden=true;ds.views=[{state:'frozen',ySplit:1}];
@@ -597,7 +725,7 @@ async function exportReport(dates,mode){
     const END=TOP+N-1,flag=k=>'INDEX('+fc(k)+',$'+H+TOP+')';
     const cf=(ref,formula,fill,font)=>ws.addConditionalFormatting({ref,rules:[{type:'expression',formulae:[formula],style:{fill:{type:'pattern',pattern:'solid',bgColor:{argb:fill}},font}}]});
     for(let k=0;k<NF;k++){const col=colL(FLCOL[k]),ref=col+TOP+':'+col+END,orange=FLCOL[k]===13;
-      cf(ref,'AND($'+H+TOP+'<>"",'+flag(k)+'=1)',orange?'FFFFEDD5':EC.red,{bold:true,color:{argb:orange?'FFC2410C':EC.redt}});
+      cf(ref,'AND($'+H+TOP+'<>"",'+flag(k)+'=1)',orange?EC.red:EC.red,{bold:true,color:{argb:orange?EC.redt:EC.redt}});
       cf(ref,'AND($'+H+TOP+'<>"",'+flag(k)+'=2)',EC.grn,{strike:true,color:{argb:EC.grnt}})}
     const sc=colL(NC);
     cf(sc+TOP+':'+sc+END,sc+TOP+'="Clean"',EC.grn,{bold:true,color:{argb:EC.grnt}});
@@ -643,19 +771,27 @@ document.addEventListener('click',e=>{const t=e.target;let x;
   if(x=t.closest('[data-tab]')){tab=x.dataset.tab;LOGS=null;USERS_LIST=null;render()}
   else if(x=t.closest('[data-ex]')){openNote(x.dataset.ex)}
   else if(x=t.closest('[data-step]')){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+ +x.dataset.step);date=d.toISOString().slice(0,10);render()}
-  else if(x=t.closest('[data-del]')){if(confirm('Delete?'))delDay(x.dataset.del)}
+  else if(x=t.closest('[data-del]')){if(confirm('Delete ALL data saved for '+dmy(x.dataset.del)+'?'))delDay(x.dataset.del)}
   else if(t.id==='nu-btn'){
     (async()=>{
       const em=$('#nu-em').value.trim(), pw=$('#nu-pw').value, role=$('#nu-role').value;
       if(!em||!pw){alert('Enter email and password');return}
+      const secApp=firebase.initializeApp(FB_CONFIG,'SecAppCreate'+Date.now());
       try{
-        const secApp=firebase.initializeApp(FB_CONFIG,"SecAppCreate");
-        const cred=await secApp.auth().createUserWithEmailAndPassword(em,pw);
-        await DB.doc('users/'+cred.user.uid).set({email:em,active:true,role:role,created:Date.now(),by:MEN});
-        await secApp.delete();logA('Create user',em+' · '+role);
-        $('#nu-msg').textContent='User created successfully!';
+        let cred,relinked=false;
+        try{cred=await secApp.auth().createUserWithEmailAndPassword(em,pw)}
+        catch(err){
+          if(err.code==='auth/email-already-in-use'){
+            try{cred=await secApp.auth().signInWithEmailAndPassword(em,pw);relinked=true}
+            catch(e2){throw new Error('This e-mail already has an account. To give it access again, type that person\'s CURRENT password above, or use "Send reset email" from the list.')}
+          }else throw err}
+        await DB.doc('users/'+cred.user.uid).set({email:em,active:true,role:role,created:Date.now(),by:MEN},{merge:true});
+        logA(relinked?'Create user (re-activated)':'Create user',em+' · '+role);
+        $('#nu-msg').textContent=relinked?'Existing account re-activated!':'User created successfully!';
         $('#nu-em').value=''; $('#nu-pw').value='';
+        await loadUsersList();const bx=$('#usrBox');if(bx)bx.innerHTML=usersTableHtml();
       }catch(err){alert('Error: '+err.message)}
+      finally{try{await secApp.auth().signOut();await secApp.delete()}catch(x){}}
     })();
   }
 });
@@ -667,9 +803,12 @@ document.addEventListener('change',e=>{const t=e.target;
   else if(t.id==='agent-select'){window.MONTH_SELECTED_AGENT=t.value;window.LK_T='';render()}
 });
 render();
-document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))openExport();if(e.target.id==='th'){const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b1020';r.dataset.theme=d?'light':'dark'}});
+document.addEventListener('click',e=>{if(e.target.closest('[data-exp]'))openExport();if(e.target.id==='th'){const r=document.documentElement,dark=r.dataset.theme==='dark'||(!r.dataset.theme&&window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches),nt=dark?'light':'dark';r.dataset.theme=nt;try{localStorage.setItem('pcc_theme',nt)}catch(x){}}});
 document.addEventListener('input',e=>{if(e.target.id==='q'){window.Q=e.target.value;const p=e.target.selectionStart;render();const q=$('#q');if(q){q.focus();q.setSelectionRange(p,p)}}});
-document.addEventListener('click',e=>{if(e.target.id==='so')firebase.auth().signOut()});
+document.addEventListener('click',e=>{if(e.target.id==='so'){clearInterval(PRES_T);const done=()=>firebase.auth().signOut();if(DB&&ME){DB.doc('presence/'+ME).set({t:firebase.firestore.FieldValue.serverTimestamp(),online:false},{merge:true}).then(done,done)}else done()}});
+window.addEventListener('online',()=>{setDot(true);beat(true)});window.addEventListener('offline',()=>setDot(false));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat(true)});
+setInterval(()=>{if(tab==='admin'&&USER_ROLE==='admin'&&document.getElementById('usrBox')){loadUsersList().then(()=>{const b=document.getElementById('usrBox');if(b)b.innerHTML=usersTableHtml()})}},30000);
 document.addEventListener('click',async e=>{const id=e.target.id;
   if(id==='xc'||id==='mdl'){const m=document.getElementById('mdl');if(m)m.remove();return}
   if(id==='nx1'){saveNote(true);return}
@@ -738,5 +877,19 @@ document.addEventListener('click',e=>{const t=e.target,r=t.closest('[data-pwrese
   if(t.id==='pw')openPwd();else if(t.id==='pw-save')savePwd();else if(r)sendReset(r.dataset.pwreset);
   else if(t.id==='xc'||t.id==='mdl'){const m=document.getElementById('mdl');if(m)m.remove()}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&['pw-cur','pw-new','pw-new2'].includes(e.target.id))savePwd()});
+try{const th=localStorage.getItem('pcc_theme');if(th)document.documentElement.dataset.theme=th;else if(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.dataset.theme='dark'}catch(e){}
+document.addEventListener('change',e=>{if(e.target.id==='dsel'){window.DSEL=e.target.value;render()}});
+document.addEventListener('click',e=>{const t=e.target,od=t.closest('[data-opend]'),ub=t.closest('[data-uact]');
+  if(od){date=od.dataset.opend;month=date.slice(0,7);tab='dash';render();return}
+  if(!ub)return;
+  const id=ub.dataset.uid,act=ub.dataset.uact,u=(USERS_LIST||[]).find(x=>x.id===id);if(!u)return;
+  if(id===ME){alert('You cannot disable or delete your own account.');return}
+  if(u.role==='admin'&&u.active!==false&&(USERS_LIST||[]).filter(x=>x.role==='admin'&&x.active!==false).length<=1){alert('You cannot remove the last active admin.');return}
+  (async()=>{try{
+    if(act==='del'){if(!confirm('Delete the access of '+(u.email||id)+'?\nThey will no longer be able to use the system.'))return;await DB.doc('users/'+id).delete();logA('Delete user',u.email||id)}
+    else{const to=act==='en';if(!to&&!confirm('Disable '+(u.email||id)+'?'))return;await DB.doc('users/'+id).update({active:to});logA(to?'Enable user':'Disable user',u.email||id)}
+    await loadUsersList();const b=document.getElementById('usrBox');if(b)b.innerHTML=usersTableHtml()
+  }catch(err){alert('Failed: '+(err.message||err.code))}})()});
+const fixHH=()=>{const h=document.querySelector('header');if(h)document.documentElement.style.setProperty('--hh',h.offsetHeight+'px')};fixHH();addEventListener('resize',fixHH);new MutationObserver(fixHH).observe(document.getElementById('app'),{childList:true});
 boot();
 </script></body></html>
