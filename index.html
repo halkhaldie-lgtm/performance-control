@@ -217,10 +217,10 @@ async function loadMonth(m){if(!DB||LOADED[m])return;
   LOADED[m]=1}
 
 function showLogin(msg){let m=document.getElementById('lg');if(!m){m=document.createElement('div');m.id='lg';m.style.cssText='position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px';
-  m.innerHTML=`<div class="card" style="padding:28px;width:min(400px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:20px">Performance Contact Center</h2><p class="hint">Sign in to continue</p><div style="display:grid;gap:10px"><input id="em" type="email" placeholder="Email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button class="b p" id="si">Sign in</button><span id="le" style="color:var(--redt);font-size:12px"></span></div></div>`;
+  m.innerHTML=`<div class="card" style="padding:28px;width:min(400px,100%);overflow:visible;margin:0"><h2 style="margin-top:0;font-size:20px">Performance Contact Center</h2><p class="hint">Sign in to continue</p><div style="display:grid;gap:10px"><input id="em" type="email" placeholder="Email" autocomplete="username"><input id="lpw" type="password" placeholder="Password" autocomplete="current-password"><button class="b p" id="si">Sign in</button><span id="le" style="color:var(--redt);font-size:12px"></span></div></div>`;
   document.body.appendChild(m);
-  const go=async()=>{$('#le').textContent='';try{await firebase.auth().signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value)}catch(e){$('#le').textContent='Sign-in failed: '+(e.code||e.message)}};
-  $('#si').onclick=go;$('#pw').onkeydown=e=>{if(e.key==='Enter')go()}}
+  const go=async()=>{$('#le').textContent='';try{await firebase.auth().signInWithEmailAndPassword($('#em').value.trim(),$('#lpw').value)}catch(e){$('#le').textContent='Sign-in failed: '+(e.code||e.message)}};
+  $('#si').onclick=go;$('#lpw').onkeydown=e=>{if(e.key==='Enter')go()}}
   if(msg)$('#le').textContent=msg}
 function hideLogin(){const m=document.getElementById('lg');if(m)m.remove()}
 
