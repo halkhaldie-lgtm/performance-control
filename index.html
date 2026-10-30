@@ -252,7 +252,7 @@ function importFile(f){
       if(/^logged-in/i.test(st)){ev=[t[1],'I','',0];seenR[k]=0}
       else if(/^logout/i.test(st))ev=[t[1],'O',re,0];
       else if(/^ready/i.test(st)){if(!seenR[k]){seenR[k]=1;ev=[t[1],'R','',0]}}
-      else if(/^not ready/i.test(st)&&/^(break|work)$|no answer|appointment/i.test(re))ev=[t[1],'N',re,d];
+      else if(/^not ready/i.test(st)&&/^(break|work)$|no[\s-]*answer|not[\s-]*answered|appointment/i.test(re))ev=[t[1],'N',re,d];
       else if(/^talking/i.test(st)&&d<=3)ev=[t[1],'T','',d];
       if(!ev)return;(ag[t[0]]=ag[t[0]]||{});(ag[t[0]][name]=ag[t[0]][name]||[]).push(ev)});
     const ds=Object.keys(ag);if(!ds.length){alert('No valid rows');return}
@@ -344,7 +344,7 @@ function calc(dt,name){
     else if(e[1]==='N'){const endS=shift+LIM.shift;
       if(/^break/i.test(e[2])){o.brk+=e[3];if(li&&e[0]>=endS-LIM.lastBrk&&e[0]<=endS){o.lbrk.push(hms(e[0]));o.lbrkD.push(e[3])}}
       else if(/^work$/i.test(e[2])){o.work+=e[3];if(li&&e[0]>=endS-LIM.lastWork&&e[0]<=endS){o.lwork.push(hms(e[0]));o.lworkD.push(e[3])}}
-      else if(/no answer/i.test(e[2])&&e[3]>LIM.cna)o.cna++;
+      else if(/no[\s-]*answer|not[\s-]*answered/i.test(e[2])&&e[3]>LIM.cna)o.cna++;
       else if(/appointment/i.test(e[2])&&e[3]>LIM.appt){o.appt++;o.apptT.push(hms(e[0])+' ('+formatDuration(mn(e[3]))+')')}}});
   if(o.out==null&&li&&isOpen(dt,name)){const t=rawEv(addDays(dt,1),name).find(x=>x[1]==='O'&&/end\s*of\s*shift/i.test(x[2]));if(t){o.out=t[0]+86400;o.outNext=true}}
   rawEv(dt,name).forEach(e=>{if(e[1]==='T'){o.recv[e[3]]=(o.recv[e[3]]||0)+1;o.rt.push(hms(e[0])+' ('+e[3]+'s)')}});
